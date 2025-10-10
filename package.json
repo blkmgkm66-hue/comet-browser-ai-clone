@@ -1,0 +1,22 @@
+{
+  "name": "comet-browser-ai-clone",
+  "version": "1.0.0",
+  "description": "An Electron-based browser with integrated AI assistant, inspired by Perplexity Comet",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": [
+    "electron",
+    "browser",
+    "ai",
+    "assistant"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {}
+}
