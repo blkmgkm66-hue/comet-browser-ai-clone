@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comet Browser AI Clone</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Browser Navigation Bar -->
+        <div id="navbar">
+            <div class="nav-controls">
+                <button id="back-btn" title="Back">←</button>
+                <button id="forward-btn" title="Forward">→</button>
+                <button id="refresh-btn" title="Refresh">⟳</button>
+            </div>
+            <div class="address-bar">
+                <input type="text" id="url-input" placeholder="Enter URL or search...">
+                <button id="go-btn">Go</button>
+            </div>
+            <button id="ai-toggle-btn" title="Toggle AI Assistant">🤖</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <!-- Browser View -->
+            <div id="browser-view">
+                <webview id="webview" src="https://www.google.com"></webview>
+            </div>
+
+            <!-- AI Assistant Panel -->
+            <div id="ai-panel" class="hidden">
+                <div class="ai-header">
+                    <h2>AI Assistant</h2>
+                    <button id="close-ai-btn">✕</button>
+                </div>
+                <div id="chat-container">
+                    <div id="chat-messages"></div>
+                    <div class="chat-input-area">
+                        <textarea id="chat-input" placeholder="Ask me anything about the current page..."></textarea>
+                        <button id="send-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/renderer.js"></script>
+</body>
+</html>
