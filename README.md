@@ -49,5 +49,5 @@ npm run build
 ```
 ## Milestones & Development Log
 **[2025-10-12] MILESTONE: Refactored shutdown logic in main.js to keep browser app running on all platforms unless explicitly exited. App now recreates the main window to maintain browser experience instead of quitting. Notated code with milestone and TODOs for future tab recovery.**
-
 **[2025-10-12] MILESTONE: Added comprehensive comments, MILESTONE markers, and TODO tags to renderer.js. Code now clearly marks completed features, outlines improvement areas (AI API integration, tab/session recovery), and improves maintainability for further agentic enhancements.**
+**[2025-10-12] MILESTONE: Prototyped basic tab management UI in index.html and renderer.js. New Tab and Close Tab button controls and tab list display scaffolding added and commented. Tab logic & session restore are next.**
