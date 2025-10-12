@@ -1,7 +1,5 @@
 # Comet Browser AI Clone
-
 ## AI Agent Development Best Practices
-
 *These principles are derived from workflow best practices for AI agent development and testing:*
 
 - **Break down features into approved high-level tasks first** - Before diving into implementation, decompose features into clear, parent-level tasks that establish the overall scope and direction
@@ -10,6 +8,11 @@
 - **Add testing at the end of each atomic task** - Every discrete task completion should include appropriate tests to validate functionality before moving forward
 - **Proceed only one subtask at a time unless explicitly approved** - Sequential execution ensures quality and allows for course correction; only parallelize work when explicitly greenlit
 - **Document results and feedback after each major phase** - Capture outcomes, lessons learned, and stakeholder feedback at phase boundaries to inform future iterations
+- **Always notate source code with clear comments for all major functions and lifecycle events** - Ensure code readability and maintainability through comprehensive documentation
+- **Mark key feature completions with // MILESTONE comments in code** - Track significant progress directly in the codebase for easy reference
+- **Use // FIXME or // TODO for known issues or improvements needed** - Flag areas requiring attention or future enhancement
+- **When a key feature or fix is completed, record the event under a 'Milestones & Development Log' section in the README** - Maintain a historical record of major achievements and changes
+- **Every round of work should result in updated code comments and a new dated entry in the README milestone log** - Ensure continuous documentation of progress and decisions
 
 *Attribution: Inspired by transcript-based workflow methodology emphasizing iterative development with continuous human oversight.*
 
@@ -49,39 +52,3 @@ comet-browser-ai-clone/
 
 - **Navigation Controls**: Back, forward, and refresh buttons
 - **Address Bar**: Enter URLs or search queries
-- **Webview Integration**: Secure browsing with Electron's webview
-- **URL Auto-completion**: Automatically adds https:// protocol
-
-### AI Assistant
-
-- **Toggle Panel**: Show/hide AI assistant with a single click
-- **Chat Interface**: Interactive chat UI for AI conversations
-- **Message History**: Scrollable chat history
-- **Placeholder Integration**: Ready for AI API integration (OpenAI, Claude, etc.)
-
-## Installation
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/blkmgkm66-hue/comet-browser-ai-clone.git
-   cd comet-browser-ai-clone
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Run the application:
-   ```bash
-   npm start
-   ```
-
-## Development
-
-To modify the application:
-
-1. Edit `main.js` for main process changes
-2. Edit `src/index.html` for UI structure
-3. Edit `src/scripts/renderer.js` for browser and AI logic
-4. Edit `src/styles/main.css` for styling
