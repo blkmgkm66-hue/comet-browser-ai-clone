@@ -8,6 +8,15 @@
 // Core browser and AI assistant UI elements
 // ===================================================================
 
+// MILESTONE Tab controls prototyped
+// Tab management elements
+const tabList = document.getElementById('tab-list');
+const newTabBtn = document.getElementById('new-tab-btn');
+const closeTabBtn = document.getElementById('close-tab-btn');
+// TODO: Implement tab data structure and management logic
+// TODO: Add event listeners for tab switching
+// TODO session recovery
+
 // Browser functionality
 const webview = document.getElementById('webview');
 const urlInput = document.getElementById('url-input');
@@ -23,6 +32,39 @@ const closeAiBtn = document.getElementById('close-ai-btn');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
+
+// ===================================================================
+// TAB MANAGEMENT UI EVENT LISTENERS
+// Button handlers for tab operations (UI skeleton only)
+// MILESTONE Tab controls prototyped
+// ===================================================================
+
+/**
+ * New Tab button click handler
+ * TODO: Implement actual tab creation logic
+ */
+newTabBtn.addEventListener('click', () => {
+    // TODO: Create new tab object
+    // TODO: Add tab to tab list display
+    // TODO: Switch to the new tab
+    console.log('New Tab button clicked - logic not yet implemented');
+});
+
+/**
+ * Close Tab button click handler
+ * TODO: Implement actual tab closing logic
+ */
+closeTabBtn.addEventListener('click', () => {
+    // TODO: Get current active tab
+    // TODO: Remove tab from data structure
+    // TODO: Remove tab from display
+    // TODO: Switch to another tab if available
+    console.log('Close Tab button clicked - logic not yet implemented');
+});
+
+// TODO: Add tab click handlers for switching between tabs
+// TODO: Implement tab rendering function to display tab list
+// TODO session recovery
 
 // ===================================================================
 // NAVIGATION CONTROLS
