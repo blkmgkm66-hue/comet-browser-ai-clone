@@ -17,13 +17,10 @@
 *Attribution: Inspired by transcript-based workflow methodology emphasizing iterative development with continuous human oversight.*
 
 ---
-
 An Electron-based browser with integrated AI assistant, inspired by Perplexity Comet.
 
 ## Overview
-
 This project is a functional browser application built with Electron that features:
-
 - Full web browsing capabilities
 - Integrated AI assistant panel
 - Clean, modern UI design
@@ -32,7 +29,6 @@ This project is a functional browser application built with Electron that featur
 - Toggle-able AI assistant sidebar
 
 ## Project Structure
-
 ```
 comet-browser-ai-clone/
 ├── main.js                 # Electron main process
@@ -47,8 +43,36 @@ comet-browser-ai-clone/
 ```
 
 ## Features
-
 ### Browser Functionality
-
 - **Navigation Controls**: Back, forward, and refresh buttons
 - **Address Bar**: Enter URLs or search queries
+- **Web Content Display**: Embedded browser view for rendering web pages
+
+### AI Assistant
+- **Toggle Interface**: Show/hide AI assistant panel
+- **Chat Interface**: Ask questions and get AI-powered responses
+- **Context Awareness**: AI can reference current page content
+
+## Development
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation
+```bash
+npm install
+```
+
+### Running the Application
+```bash
+npm start
+```
+
+### Building
+```bash
+npm run build
+```
+
+## Milestones & Development Log
+
+**[2025-10-12] MILESTONE: Refactored shutdown logic in main.js to keep browser app running on all platforms unless explicitly exited. App now recreates the main window to maintain browser experience instead of quitting. Notated code with milestone and TODOs for future tab recovery.**
