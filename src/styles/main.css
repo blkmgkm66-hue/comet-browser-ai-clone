@@ -1,214 +1,398 @@
+/* Ready Robot Branding - Main Stylesheet */
+
+/* Import Web Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono&display=swap');
+
+/* CSS Variables for Branding */
+:root {
+    --midnight-blue: #0a0e27;
+    --logo-blue: #4A9EFF;
+    --light-blue-glow: rgba(74, 158, 255, 0.3);
+    --silver-metallic: linear-gradient(145deg, #b8c6db 0%, #f5f7fa 50%, #b8c6db 100%);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Global Reset */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Body Styling - Midnight Blue Background */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     height: 100vh;
     overflow: hidden;
+    background: var(--midnight-blue);
+    background-image: url('../../ARCHERR.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
 }
 
+/* Background Overlay for Logo */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 14, 39, 0.85);
+    z-index: 0;
+}
+
+/* Loading Screen Styles */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    transition: opacity 0.5s ease;
+}
+
+.typewriter-container {
+    display: flex;
+    align-items: center;
+}
+
+.typewriter-text {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--logo-blue);
+    letter-spacing: 0.1em;
+}
+
+.cursor {
+    display: inline-block;
+    width: 3px;
+    height: 3rem;
+    background: var(--logo-blue);
+    margin-left: 5px;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Main App Container */
 #app {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.5s ease;
 }
 
-/* Navigation Bar */
+/* Glassmorphism Utility Classes */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+/* Tab Bar */
+#tab-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 12px;
+}
+
+#tab-list {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    overflow-x: auto;
+}
+
+.tab-controls {
+    display: flex;
+    gap: 8px;
+}
+
+/* Navigation Bar - Glassmorphism */
 #navbar {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     gap: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .nav-controls {
     display: flex;
-    gap: 4px;
-}
-
-.nav-controls button {
-    padding: 6px 12px;
-    border: 1px solid #ccc;
-    background-color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.nav-controls button:hover {
-    background-color: #e8e8e8;
+    gap: 6px;
 }
 
 .address-bar {
     flex: 1;
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 #url-input {
     flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
     font-size: 14px;
+    transition: all 0.3s ease;
 }
 
-#go-btn {
-    padding: 8px 16px;
-    background-color: #0066cc;
-    color: white;
-    border: none;
-    border-radius: 4px;
+#url-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--logo-blue);
+    box-shadow: 0 0 15px var(--light-blue-glow);
+}
+
+#url-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Glass Buttons - Liquid Glass Effect */
+.glass-button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    font-weight: 500;
-}
-
-#go-btn:hover {
-    background-color: #0052a3;
-}
-
-#ai-toggle-btn {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    background-color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 20px;
-}
-
-#ai-toggle-btn:hover {
-    background-color: #e8e8e8;
-}
-
-/* Main Content */
-#main-content {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-}
-
-#browser-view {
-    flex: 1;
+    transition: all 0.3s ease;
     position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
 }
 
-#webview {
+.glass-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
     width: 100%;
     height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
 }
 
-/* AI Assistant Panel */
-#ai-panel {
-    width: 400px;
-    border-left: 1px solid #ddd;
-    display: flex;
-    flex-direction: column;
-    background-color: white;
+.glass-button:hover::before {
+    left: 100%;
 }
 
-#ai-panel.hidden {
-    display: none;
+.glass-button:hover {
+    background: linear-gradient(135deg, rgba(74, 158, 255, 0.3), rgba(74, 158, 255, 0.15));
+    border-color: var(--logo-blue);
+    box-shadow: 0 0 20px var(--light-blue-glow);
+    transform: translateY(-2px);
 }
 
-.ai-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid #ddd;
-    background-color: #f9f9f9;
+.glass-button:active {
+    transform: translateY(0);
+    box-shadow: 0 0 10px var(--light-blue-glow);
 }
 
-.ai-header h2 {
-    font-size: 18px;
-    font-weight: 600;
+/* Agent Dropdown */
+#agent-dropdown {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-#close-ai-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 4px 8px;
-    color: #666;
+#agent-dropdown-btn {
+    font-size: 16px;
 }
 
-#close-ai-btn:hover {
-    color: #333;
-}
-
-#chat-container {
+/* Content Wrapper */
+#content-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding: 20px;
 }
 
-#chat-messages {
+/* Feature Cards - Glass Morphism with Tilt Effect */
+#feature-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Light Blue Glow Effect */
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--light-blue-glow) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.feature-card:hover::before {
+    opacity: 1;
+}
+
+/* Tilt and Shimmer Effect */
+.feature-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 15px 40px rgba(74, 158, 255, 0.4);
+    border-color: var(--logo-blue);
+}
+
+/* Shimmer Animation */
+.feature-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s ease;
+}
+
+.feature-card:hover::after {
+    left: 100%;
+}
+
+.card-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 0 10px var(--light-blue-glow));
+}
+
+.feature-card h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: var(--silver-metallic);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.feature-card p {
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+}
+
+/* Browser View */
+#browser-view {
     flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.chat-message {
-    padding: 12px;
-    border-radius: 8px;
-    max-width: 85%;
-    word-wrap: break-word;
-}
-
-.user-message {
-    background-color: #0066cc;
-    color: white;
-    align-self: flex-end;
-    margin-left: auto;
-}
-
-.ai-message {
-    background-color: #f0f0f0;
-    color: #333;
-    align-self: flex-start;
-}
-
-.chat-input-area {
-    display: flex;
-    gap: 8px;
-    padding: 16px;
-    border-top: 1px solid #ddd;
-    background-color: white;
-}
-
-#chat-input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 14px;
-    resize: vertical;
-    min-height: 40px;
-    max-height: 120px;
-}
-
-#send-btn {
-    padding: 8px 16px;
-    background-color: #0066cc;
-    color: white;
+webview {
+    width: 100%;
+    height: 100%;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    align-self: flex-start;
 }
 
-#send-btn:hover {
-    background-color: #0052a3;
+/* Typography - Silver Metallic Headings */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    background: var(--silver-metallic);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(74, 158, 255, 0.3);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(74, 158, 255, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #feature-cards {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 12px;
+    }
+    
+    .typewriter-text {
+        font-size: 2rem;
+    }
+    
+    .cursor {
+        height: 2rem;
+    }
 }
