@@ -58,276 +58,276 @@ const STORAGE_ACTIVE_KEY = 'comet.activeTabId.v1';
 /**
  * In-memory state for tabs
  */
-const TabState = {
-  tabs: [],
-  activeId: null,
-};
+const tabs = [];
+let activeTabId = null;
 
 /**
- * Generate a simple unique id for tabs (sufficient for renderer-only use)
+ * Generate a simple unique ID for tabs
  */
-function uid() {
-  return 't_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+function generateTabId() {
+  return 'tab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
 }
 
 /**
- * Persist current tab state to localStorage
- * Debounced to avoid excessive writes during rapid navigation
+ * Create a new tab with the given URL and optionally activate it
  */
-let saveTimer = null;
-function saveSession(debounced = true) {
-  const doSave = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(TabState.tabs));
-      localStorage.setItem(STORAGE_ACTIVE_KEY, TabState.activeId || '');
-    } catch (e) {
-      console.warn('Session save failed:', e);
-    }
-  };
-  if (!debounced) return doSave();
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(doSave, 200);
-}
-
-/**
- * Restore tab state from localStorage; returns true if a restore occurred.
- */
-function restoreSession() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const active = localStorage.getItem(STORAGE_ACTIVE_KEY) || '';
-    if (!raw) return false;
-    const tabs = JSON.parse(raw);
-    if (!Array.isArray(tabs) || tabs.length === 0) return false;
-    TabState.tabs = tabs.filter(t => t && t.id && t.url);
-    TabState.activeId = TabState.tabs.find(t => t.id === active)?.id || (TabState.tabs[0]?.id || null);
-    return TabState.tabs.length > 0;
-  } catch (e) {
-    console.warn('Session restore failed:', e);
-    return false;
-  }
-}
-
-// ===================================================================
-// TAB OPERATIONS
-// Create, close, switch tabs and render the tab strip
-// ===================================================================
-
-function createTab(initialUrl = 'https://www.perplexity.ai') {
+function createTab(url = 'https://www.perplexity.ai', activate = true) {
   const tab = {
-    id: uid(),
-    title: prettifyTitle(initialUrl),
-    url: normalizeUrl(initialUrl),
+    id: generateTabId(),
+    url: url,
+    title: getTitleFromUrl(url)
   };
-  TabState.tabs.push(tab);
-  setActiveTab(tab.id);
-  saveSession();
-  return tab.id;
-}
-
-function closeTab(tabId) {
-  const idx = TabState.tabs.findIndex(t => t.id === tabId);
-  if (idx === -1) return;
-  TabState.tabs.splice(idx, 1);
-  // Determine next active tab
-  if (TabState.activeId === tabId) {
-    const next = TabState.tabs[idx] || TabState.tabs[idx - 1] || TabState.tabs[0] || null;
-    TabState.activeId = next ? next.id : null;
+  tabs.push(tab);
+  if (activate) {
+    activeTabId = tab.id;
   }
   renderTabs();
-  loadActiveTabIntoWebview();
+  if (activate) {
+    loadActiveTabIntoWebview();
+  }
   saveSession();
 }
 
-function setActiveTab(tabId) {
-  if (!TabState.tabs.some(t => t.id === tabId)) return;
-  TabState.activeId = tabId;
+/**
+ * Close a tab by ID; if it's the active tab, switch to another one
+ */
+function closeTab(tabId) {
+  const index = tabs.findIndex((t) => t.id === tabId);
+  if (index === -1) return;
+
+  tabs.splice(index, 1);
+
+  // If we closed the active tab, pick a new active tab
+  if (activeTabId === tabId) {
+    if (tabs.length > 0) {
+      // Prefer the tab to the left, or the first tab
+      const newIndex = Math.max(0, index - 1);
+      activeTabId = tabs[newIndex].id;
+      loadActiveTabIntoWebview();
+    } else {
+      activeTabId = null;
+      // If no tabs left, create a new one
+      createTab('https://www.perplexity.ai');
+    }
+  }
+
+  renderTabs();
+  saveSession();
+}
+
+/**
+ * Switch to a tab by ID
+ */
+function switchTab(tabId) {
+  if (!tabs.find((t) => t.id === tabId)) return;
+  activeTabId = tabId;
   renderTabs();
   loadActiveTabIntoWebview();
   saveSession();
 }
 
-function updateActiveTabUrl(newUrl) {
-  const tab = getActiveTab();
-  if (!tab) return;
-  tab.url = normalizeUrl(newUrl);
-  tab.title = prettifyTitle(tab.url);
-  renderTabs();
-  loadActiveTabIntoWebview();
-  saveSession();
+/**
+ * Load the active tab's URL into the webview
+ */
+function loadActiveTabIntoWebview() {
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+  if (!activeTab) return;
+
+  if (webview) {
+    webview.src = activeTab.url;
+    if (urlInput) {
+      urlInput.value = activeTab.url;
+    }
+  }
 }
 
-function getActiveTab() {
-  return TabState.tabs.find(t => t.id === TabState.activeId) || null;
-}
-
+/**
+ * Render the tab strip based on current in-memory tabs
+ */
 function renderTabs() {
   if (!tabList) return;
+
   tabList.innerHTML = '';
-  TabState.tabs.forEach(tab => {
+  tabs.forEach((tab) => {
     const li = document.createElement('li');
-    li.className = 'tab-item' + (tab.id === TabState.activeId ? ' active' : '');
+    li.className = 'tab-item' + (tab.id === activeTabId ? ' active' : '');
+    li.dataset.tabId = tab.id;
 
-    const btn = document.createElement('button');
-    btn.className = 'tab-button';
-    btn.textContent = tab.title || 'New Tab';
-    btn.title = tab.url;
-    btn.addEventListener('click', () => setActiveTab(tab.id));
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'tab-title';
+    titleSpan.textContent = tab.title;
+    li.appendChild(titleSpan);
 
-    const close = document.createElement('button');
-    close.className = 'tab-close';
-    close.textContent = '×';
-    close.title = 'Close tab';
-    close.addEventListener('click', (e) => {
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'tab-close';
+    closeBtn.textContent = '✕';
+    closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       closeTab(tab.id);
     });
+    li.appendChild(closeBtn);
 
-    li.appendChild(btn);
-    li.appendChild(close);
+    li.addEventListener('click', () => {
+      switchTab(tab.id);
+    });
+
     tabList.appendChild(li);
   });
 }
 
-function loadActiveTabIntoWebview() {
-  const tab = getActiveTab();
-  if (!tab) {
-    // No tabs left: create a default one
-    createTab('https://www.perplexity.ai');
-    return;
+/**
+ * Save current tabs and active tab to localStorage
+ */
+function saveSession() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tabs));
+    localStorage.setItem(STORAGE_ACTIVE_KEY, activeTabId || '');
+  } catch (err) {
+    console.error('Failed to save session:', err);
   }
-  if (webview && webview.src !== tab.url) {
-    webview.src = tab.url;
+}
+
+/**
+ * Restore tabs from localStorage
+ */
+function restoreSession() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const storedActiveId = localStorage.getItem(STORAGE_ACTIVE_KEY);
+    if (stored) {
+      const parsedTabs = JSON.parse(stored);
+      if (Array.isArray(parsedTabs) && parsedTabs.length > 0) {
+        tabs.push(...parsedTabs);
+        activeTabId = storedActiveId || tabs[0].id;
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to restore session:', err);
   }
-  if (urlInput) urlInput.value = tab.url;
+  return false;
+}
+
+/**
+ * Derive a page title from URL (fallback before webview provides actual title)
+ */
+function getTitleFromUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname || url;
+  } catch {
+    return url.slice(0, 30);
+  }
 }
 
 // ===================================================================
-// NAVIGATION CONTROLS
-// Event handlers for browser back/forward/refresh actions
+// BROWSER NAVIGATION CONTROLS
 // ===================================================================
 
-backBtn.addEventListener('click', () => {
-  try {
-    if (webview && webview.canGoBack()) webview.goBack();
-  } catch {}
+backBtn?.addEventListener?.('click', () => {
+  webview?.goBack();
 });
 
-forwardBtn.addEventListener('click', () => {
-  try {
-    if (webview && webview.canGoForward()) webview.goForward();
-  } catch {}
+forwardBtn?.addEventListener?.('click', () => {
+  webview?.goForward();
 });
 
-refreshBtn.addEventListener('click', () => {
-  try { if (webview) webview.reload(); } catch {}
+refreshBtn?.addEventListener?.('click', () => {
+  webview?.reload();
 });
 
-goBtn.addEventListener('click', () => {
+goBtn?.addEventListener?.('click', () => {
   navigateToUrl();
 });
 
-urlInput.addEventListener('keypress', (e) => {
+urlInput?.addEventListener?.('keypress', (e) => {
   if (e.key === 'Enter') {
     navigateToUrl();
   }
 });
 
-// ===================================================================
-// URL NAVIGATION FUNCTION
-// Handles URL normalization and navigation logic
-// ===================================================================
-
-function normalizeUrl(url) {
-  if (!url) return '';
-  const trimmed = url.trim();
-  // Basic heuristic: if it contains spaces or no dot, treat as search
-  const isLikelySearch = /\s/.test(trimmed) || !/[.]/.test(trimmed.replace(/^https?:\/\//, ''));
-  if (isLikelySearch) {
-    const q = encodeURIComponent(trimmed);
-    return `https://www.google.com/search?q=${q}`;
-  }
-  if (!/^https?:\/\//i.test(trimmed)) {
-    return 'https://' + trimmed;
-  }
-  return trimmed;
-}
-
-function prettifyTitle(url) {
-  try {
-    const u = new URL(normalizeUrl(url));
-    return u.hostname.replace(/^www\./, '');
-  } catch {
-    return 'Tab';
-  }
-}
-
 function navigateToUrl() {
-  let url = urlInput.value.trim();
+  let url = urlInput?.value?.trim();
   if (!url) return;
-  updateActiveTabUrl(url);
+
+  // Simple heuristic: if it doesn't start with a protocol, prepend https://
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+
+  if (webview) {
+    webview.src = url;
+  }
+
+  // Update active tab's URL
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+  if (activeTab) {
+    activeTab.url = url;
+    activeTab.title = getTitleFromUrl(url);
+    renderTabs();
+    saveSession();
+  }
 }
 
 // ===================================================================
-// WEBVIEW LIFECYCLE EVENTS
-// Event handlers for webview state changes and navigation
+// TAB CONTROLS
 // ===================================================================
 
-// Keep address bar synced and update tab title where possible
-webview.addEventListener('did-navigate', (e) => {
-  const tab = getActiveTab();
-  if (tab) {
-    tab.url = e.url;
-    urlInput.value = e.url;
-    saveSession();
+newTabBtn?.addEventListener?.('click', () => {
+  createTab('https://www.perplexity.ai');
+});
+
+closeTabBtn?.addEventListener?.('click', () => {
+  if (activeTabId) {
+    closeTab(activeTabId);
   }
 });
 
-webview.addEventListener('did-navigate-in-page', (e) => {
-  const tab = getActiveTab();
-  if (tab) {
-    tab.url = e.url;
-    urlInput.value = e.url;
-    saveSession();
-  }
-});
+// ===================================================================
+// WEBVIEW EVENT LISTENERS
+// Update URL bar and tab title when webview navigates or loads
+// ===================================================================
 
-webview.addEventListener('page-title-updated', (e) => {
-  const tab = getActiveTab();
-  if (tab && e && e.title) {
-    tab.title = e.title.slice(0, 60);
+webview?.addEventListener?.('did-navigate', (e) => {
+  if (urlInput) {
+    urlInput.value = e.url;
+  }
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+  if (activeTab) {
+    activeTab.url = e.url;
+    activeTab.title = getTitleFromUrl(e.url);
     renderTabs();
     saveSession();
   }
 });
 
-webview.addEventListener('dom-ready', () => {
-  // Future: inject helpers, add content capture for AI context, etc.
-  // TODO(next): Capture page metadata for AI context panel.
+webview?.addEventListener?.('did-navigate-in-page', (e) => {
+  if (urlInput) {
+    urlInput.value = e.url;
+  }
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+  if (activeTab) {
+    activeTab.url = e.url;
+    renderTabs();
+    saveSession();
+  }
 });
 
-// ===================================================================
-// TAB MANAGEMENT UI EVENT LISTENERS
-// Hook up New/Close buttons and dynamic tab selection
-// ===================================================================
-
-newTabBtn.addEventListener('click', () => {
-  createTab('https://www.perplexity.ai');
+webview?.addEventListener?.('page-title-updated', (e) => {
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+  if (activeTab) {
+    activeTab.title = e.title || getTitleFromUrl(activeTab.url);
+    renderTabs();
+    saveSession();
+  }
 });
-
-closeTabBtn.addEventListener('click', () => {
-  if (!TabState.activeId) return;
-  closeTab(TabState.activeId);
-});
-
-// Note: per-tab close buttons are wired in renderTabs()
 
 // ===================================================================
 // AI ASSISTANT PANEL CONTROLS
-// Event handlers for showing/hiding the AI chat interface
 // ===================================================================
 
-a iToggleBtn?.addEventListener?.('click', () => {
+// MILESTONE: Fixed typo - changed "a iToggleBtn" to "aiToggleBtn"
+aiToggleBtn?.addEventListener?.('click', () => {
   aiPanel?.classList?.toggle('hidden');
 });
 
@@ -354,8 +354,10 @@ chatInput?.addEventListener?.('keypress', (e) => {
 function sendMessage() {
   const message = chatInput?.value?.trim();
   if (!message) return;
+
   addMessageToChat('user', message);
   chatInput.value = '';
+
   setTimeout(() => {
     addMessageToChat('ai', 'Placeholder response. AI API integration coming next.');
   }, 300);
