@@ -3,137 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comet Browser AI Clone</title>
+    <title>Ready Robot - Comet Browser AI</title>
     <link rel="stylesheet" href="styles/main.css">
-    <!-- Milestone 2: Agent Menu Styling -->
     <link rel="stylesheet" href="styles/agentMenu.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="app">
-        <!-- MILESTONE 1: Tab controls prototyped -->
+    <!-- Loading Animation -->
+    <div id="loading-screen">
+        <div class="typewriter-container">
+            <span class="typewriter-text" id="typewriter"></span>
+            <span class="cursor"></span>
+        </div>
+    </div>
+
+    <div id="app" style="display: none;">
         <!-- Tab Management UI -->
         <div id="tab-bar">
             <div id="tab-list">
                 <!-- Tab list display area - tabs will be rendered here -->
             </div>
             <div class="tab-controls">
-                <button id="new-tab-btn" title="New Tab">+ New Tab</button>
-                <button id="close-tab-btn" title="Close Tab">✕ Close Tab</button>
+                <button id="new-tab-btn" class="glass-button" title="New Tab">+ New Tab</button>
+                <button id="close-tab-btn" class="glass-button" title="Close Tab">✕ Close Tab</button>
             </div>
         </div>
 
-        <!-- TODO session recovery -->
         <!-- Browser Navigation Bar -->
         <div id="navbar">
             <div class="nav-controls">
-                <button id="back-btn" title="Back">←</button>
-                <button id="forward-btn" title="Forward">→</button>
-                <button id="refresh-btn" title="Refresh">⟳</button>
+                <button id="back-btn" class="glass-button" title="Back">←</button>
+                <button id="forward-btn" class="glass-button" title="Forward">→</button>
+                <button id="refresh-btn" class="glass-button" title="Refresh">⟳</button>
             </div>
             <div class="address-bar">
                 <input type="text" id="url-input" placeholder="Enter URL or search...">
-                <button id="go-btn">Go</button>
+                <button id="go-btn" class="glass-button">Go</button>
             </div>
-            <button id="ai-toggle-btn" title="Toggle AI Assistant">🤖</button>
-            <!-- Milestone 2: Agent Menu Button -->
-            <button id="agent-menu-btn" title="Open Agent Menu" style="margin-left: 8px;">🤖 Agents</button>
         </div>
 
-        <!-- Browser Content Area -->
-        <div id="browser-view">
-            <webview id="webview" src="about:blank"></webview>
+        <!-- MILESTONE 2: AI Agents Dropdown -->
+        <div id="agent-dropdown" class="glass-panel">
+            <button id="agent-dropdown-btn" class="glass-button">🤖 AI Agents</button>
+            <div id="agent-menu" class="agent-menu-hidden">
+                <!-- Agent menu rendered by agentMenu.js -->
+            </div>
         </div>
 
-        <!-- Milestone 2: Agent Menu Panel -->
-        <div id="agent-menu-panel" style="display: none;">
-            <div class="agent-menu-overlay" id="agentMenuOverlay"></div>
-            <div class="agent-menu-container">
-                <div class="agent-menu-header-bar">
-                    <h2>🤖 Agent Control Center</h2>
-                    <button id="close-agent-menu" class="close-btn">✕</button>
+        <!-- Main Content Area -->
+        <div id="content-wrapper">
+            <!-- Feature Cards Section -->
+            <div id="feature-cards">
+                <div class="feature-card glass-card">
+                    <div class="card-icon">🌐</div>
+                    <h3>AI-Powered Browsing</h3>
+                    <p>Experience intelligent web navigation with integrated AI agents</p>
                 </div>
-                <!-- Agent Menu Content (populated by agentMenu.js) -->
-                <div id="agentMenuContent"></div>
+                <div class="feature-card glass-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Optimized performance with modern web technologies</p>
+                </div>
+                <div class="feature-card glass-card">
+                    <div class="card-icon">🔒</div>
+                    <h3>Secure & Private</h3>
+                    <p>Your data stays protected with advanced security features</p>
+                </div>
             </div>
-        </div>
 
-        <!-- Status Bar -->
-        <div id="status-bar">
-            <span id="status-text">Ready</span>
-            <span id="tier-indicator">Tier: <span id="current-tier">1 (Free)</span></span>
+            <!-- Browser View -->
+            <div id="browser-view">
+                <webview id="webview" src="about:blank"></webview>
+            </div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="scripts/renderer.js"></script>
-    <!-- Milestone 2: Agent System Scripts -->
-    <script src="scripts/agentConfig.js"></script>
     <script src="scripts/agentMenu.js"></script>
-    
-    <!-- Milestone 2: Initialize Agent System -->
+    <script src="scripts/agentConfig.js"></script>
     <script>
-        // Initialize the agent configuration manager
-        const agentManager = new window.AgentConfig.AgentConfigManager();
+        // Loading animation script
+        const text = 'READY ROBOT';
+        const typewriter = document.getElementById('typewriter');
+        let i = 0;
         
-        // Set default tier (for testing, can be changed)
-        // Tier 1 = Free, Tier 2 = Upgraded, Tier 3 = Premium
-        agentManager.setTier(1); // Start with free tier
-        
-        // Initialize the agent menu UI
-        const agentMenuUI = new window.AgentMenuUI('agentMenuContent', agentManager);
-        
-        // Agent menu toggle functionality
-        const agentMenuBtn = document.getElementById('agent-menu-btn');
-        const agentMenuPanel = document.getElementById('agent-menu-panel');
-        const closeAgentMenuBtn = document.getElementById('close-agent-menu');
-        const agentMenuOverlay = document.getElementById('agentMenuOverlay');
-        
-        function openAgentMenu() {
-            agentMenuPanel.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeAgentMenu() {
-            agentMenuPanel.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-        
-        agentMenuBtn.addEventListener('click', openAgentMenu);
-        closeAgentMenuBtn.addEventListener('click', closeAgentMenu);
-        agentMenuOverlay.addEventListener('click', closeAgentMenu);
-        
-        // Listen for agent start events
-        document.addEventListener('agentStart', (event) => {
-            console.log('Agent started:', event.detail);
-            const statusText = document.getElementById('status-text');
-            statusText.textContent = `Agent "${event.detail.agent.name}" running in ${event.detail.mode} mode`;
-        });
-        
-        // Update tier indicator
-        function updateTierIndicator() {
-            const tierElement = document.getElementById('current-tier');
-            const tier = agentManager.currentTier;
-            const tierNames = { 1: 'Free', 2: 'Upgraded', 3: 'Premium' };
-            tierElement.textContent = `${tier} (${tierNames[tier]})`;
-        }
-        
-        updateTierIndicator();
-        
-        // Testing: Add keyboard shortcuts to change tiers (for development)
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+1, Ctrl+2, Ctrl+3 to switch tiers
-            if (e.ctrlKey && ['1', '2', '3'].includes(e.key)) {
-                const tier = parseInt(e.key);
-                agentManager.setTier(tier);
-                agentMenuUI.setTier(tier);
-                updateTierIndicator();
-                console.log(`Tier changed to ${tier} (for testing)`);
+        function typeWriter() {
+            if (i < text.length) {
+                typewriter.textContent += text.charAt(i);
+                i++;
+                setTimeout(typeWriter, 150);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        document.getElementById('app').style.display = 'block';
+                        document.getElementById('app').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('app').style.opacity = '1';
+                        }, 50);
+                    }, 500);
+                }, 1000);
             }
-        });
+        }
         
-        console.log('%c🚀 Milestone 2: Agent System Initialized', 'color: #4a90e2; font-size: 16px; font-weight: bold;');
-        console.log('Use Ctrl+1/2/3 to test different tiers');
-        console.log('Click "🤖 Agents" button to open the agent menu');
+        // Start typing animation on load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(typeWriter, 500);
+        });
     </script>
 </body>
 </html>
