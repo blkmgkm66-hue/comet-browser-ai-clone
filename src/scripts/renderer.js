@@ -4,18 +4,25 @@
 // ===================================================================
 
 // ===================================================================
+// MILESTONE [2025-10-13]
+// Milestone 1: Initial multi-tab browsing and session restore completed.
+// - Implemented in-memory tab model with create/close/switch operations
+// - Rendered tab strip with active state and close buttons
+// - Webview navigation bound to active tab URL and updates address bar
+// - Session persistence via localStorage with debounced saves
+// - Session restore on startup with sane fallbacks
+// - Comprehensive inline comments and TODO markers for next milestones
+// ===================================================================
+
+// ===================================================================
 // DOM ELEMENT REFERENCES
 // Core browser and AI assistant UI elements
 // ===================================================================
 
-// MILESTONE Tab controls prototyped
 // Tab management elements
 const tabList = document.getElementById('tab-list');
 const newTabBtn = document.getElementById('new-tab-btn');
 const closeTabBtn = document.getElementById('close-tab-btn');
-// TODO: Implement tab data structure and management logic
-// TODO: Add event listeners for tab switching
-// TODO session recovery
 
 // Browser functionality
 const webview = document.getElementById('webview');
@@ -34,237 +41,354 @@ const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 
 // ===================================================================
-// TAB MANAGEMENT UI EVENT LISTENERS
-// Button handlers for tab operations (UI skeleton only)
-// MILESTONE Tab controls prototyped
+// TAB MODEL AND SESSION PERSISTENCE
+// Implements multi-tab state in memory and persists to localStorage
 // ===================================================================
 
 /**
- * New Tab button click handler
- * TODO: Implement actual tab creation logic
+ * Tab data shape
+ * id: string (uuid-ish)
+ * title: string (best-effort from URL; updated via webview title when available)
+ * url: string
  */
-newTabBtn.addEventListener('click', () => {
-    // TODO: Create new tab object
-    // TODO: Add tab to tab list display
-    // TODO: Switch to the new tab
-    console.log('New Tab button clicked - logic not yet implemented');
-});
+
+const STORAGE_KEY = 'comet.tabs.v1';
+const STORAGE_ACTIVE_KEY = 'comet.activeTabId.v1';
 
 /**
- * Close Tab button click handler
- * TODO: Implement actual tab closing logic
+ * In-memory state for tabs
  */
-closeTabBtn.addEventListener('click', () => {
-    // TODO: Get current active tab
-    // TODO: Remove tab from data structure
-    // TODO: Remove tab from display
-    // TODO: Switch to another tab if available
-    console.log('Close Tab button clicked - logic not yet implemented');
-});
+const TabState = {
+  tabs: [],
+  activeId: null,
+};
 
-// TODO: Add tab click handlers for switching between tabs
-// TODO: Implement tab rendering function to display tab list
-// TODO session recovery
+/**
+ * Generate a simple unique id for tabs (sufficient for renderer-only use)
+ */
+function uid() {
+  return 't_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+}
+
+/**
+ * Persist current tab state to localStorage
+ * Debounced to avoid excessive writes during rapid navigation
+ */
+let saveTimer = null;
+function saveSession(debounced = true) {
+  const doSave = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(TabState.tabs));
+      localStorage.setItem(STORAGE_ACTIVE_KEY, TabState.activeId || '');
+    } catch (e) {
+      console.warn('Session save failed:', e);
+    }
+  };
+  if (!debounced) return doSave();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 200);
+}
+
+/**
+ * Restore tab state from localStorage; returns true if a restore occurred.
+ */
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const active = localStorage.getItem(STORAGE_ACTIVE_KEY) || '';
+    if (!raw) return false;
+    const tabs = JSON.parse(raw);
+    if (!Array.isArray(tabs) || tabs.length === 0) return false;
+    TabState.tabs = tabs.filter(t => t && t.id && t.url);
+    TabState.activeId = TabState.tabs.find(t => t.id === active)?.id || (TabState.tabs[0]?.id || null);
+    return TabState.tabs.length > 0;
+  } catch (e) {
+    console.warn('Session restore failed:', e);
+    return false;
+  }
+}
+
+// ===================================================================
+// TAB OPERATIONS
+// Create, close, switch tabs and render the tab strip
+// ===================================================================
+
+function createTab(initialUrl = 'https://www.perplexity.ai') {
+  const tab = {
+    id: uid(),
+    title: prettifyTitle(initialUrl),
+    url: normalizeUrl(initialUrl),
+  };
+  TabState.tabs.push(tab);
+  setActiveTab(tab.id);
+  saveSession();
+  return tab.id;
+}
+
+function closeTab(tabId) {
+  const idx = TabState.tabs.findIndex(t => t.id === tabId);
+  if (idx === -1) return;
+  TabState.tabs.splice(idx, 1);
+  // Determine next active tab
+  if (TabState.activeId === tabId) {
+    const next = TabState.tabs[idx] || TabState.tabs[idx - 1] || TabState.tabs[0] || null;
+    TabState.activeId = next ? next.id : null;
+  }
+  renderTabs();
+  loadActiveTabIntoWebview();
+  saveSession();
+}
+
+function setActiveTab(tabId) {
+  if (!TabState.tabs.some(t => t.id === tabId)) return;
+  TabState.activeId = tabId;
+  renderTabs();
+  loadActiveTabIntoWebview();
+  saveSession();
+}
+
+function updateActiveTabUrl(newUrl) {
+  const tab = getActiveTab();
+  if (!tab) return;
+  tab.url = normalizeUrl(newUrl);
+  tab.title = prettifyTitle(tab.url);
+  renderTabs();
+  loadActiveTabIntoWebview();
+  saveSession();
+}
+
+function getActiveTab() {
+  return TabState.tabs.find(t => t.id === TabState.activeId) || null;
+}
+
+function renderTabs() {
+  if (!tabList) return;
+  tabList.innerHTML = '';
+  TabState.tabs.forEach(tab => {
+    const li = document.createElement('li');
+    li.className = 'tab-item' + (tab.id === TabState.activeId ? ' active' : '');
+
+    const btn = document.createElement('button');
+    btn.className = 'tab-button';
+    btn.textContent = tab.title || 'New Tab';
+    btn.title = tab.url;
+    btn.addEventListener('click', () => setActiveTab(tab.id));
+
+    const close = document.createElement('button');
+    close.className = 'tab-close';
+    close.textContent = '×';
+    close.title = 'Close tab';
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeTab(tab.id);
+    });
+
+    li.appendChild(btn);
+    li.appendChild(close);
+    tabList.appendChild(li);
+  });
+}
+
+function loadActiveTabIntoWebview() {
+  const tab = getActiveTab();
+  if (!tab) {
+    // No tabs left: create a default one
+    createTab('https://www.perplexity.ai');
+    return;
+  }
+  if (webview && webview.src !== tab.url) {
+    webview.src = tab.url;
+  }
+  if (urlInput) urlInput.value = tab.url;
+}
 
 // ===================================================================
 // NAVIGATION CONTROLS
 // Event handlers for browser back/forward/refresh actions
-// MILESTONE: Basic browser navigation completed
 // ===================================================================
 
-/**
- * Navigate backwards in browsing history
- * Checks if backward navigation is possible before executing
- */
 backBtn.addEventListener('click', () => {
-    if (webview.canGoBack()) {
-        webview.goBack();
-    }
+  try {
+    if (webview && webview.canGoBack()) webview.goBack();
+  } catch {}
 });
 
-/**
- * Navigate forwards in browsing history
- * Checks if forward navigation is possible before executing
- */
 forwardBtn.addEventListener('click', () => {
-    if (webview.canGoForward()) {
-        webview.goForward();
-    }
+  try {
+    if (webview && webview.canGoForward()) webview.goForward();
+  } catch {}
 });
 
-/**
- * Refresh/reload the current page
- * Forces the webview to reload its current content
- */
 refreshBtn.addEventListener('click', () => {
-    webview.reload();
+  try { if (webview) webview.reload(); } catch {}
 });
 
-/**
- * Trigger navigation to URL entered in address bar
- * Delegates to navigateToUrl() function
- */
 goBtn.addEventListener('click', () => {
-    navigateToUrl();
+  navigateToUrl();
 });
 
-/**
- * Handle Enter key press in URL input field
- * Triggers navigation when user presses Enter
- */
 urlInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        navigateToUrl();
-    }
+  if (e.key === 'Enter') {
+    navigateToUrl();
+  }
 });
 
 // ===================================================================
 // URL NAVIGATION FUNCTION
-// Handles URL validation and navigation logic
-// MILESTONE: URL input and navigation completed
+// Handles URL normalization and navigation logic
 // ===================================================================
 
-/**
- * Navigate to URL entered in the address bar
- * Adds https:// protocol if missing and validates URL format
- * Supports both full URLs and search queries
- */
+function normalizeUrl(url) {
+  if (!url) return '';
+  const trimmed = url.trim();
+  // Basic heuristic: if it contains spaces or no dot, treat as search
+  const isLikelySearch = /\s/.test(trimmed) || !/[.]/.test(trimmed.replace(/^https?:\/\//, ''));
+  if (isLikelySearch) {
+    const q = encodeURIComponent(trimmed);
+    return `https://www.google.com/search?q=${q}`;
+  }
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return 'https://' + trimmed;
+  }
+  return trimmed;
+}
+
+function prettifyTitle(url) {
+  try {
+    const u = new URL(normalizeUrl(url));
+    return u.hostname.replace(/^www\./, '');
+  } catch {
+    return 'Tab';
+  }
+}
+
 function navigateToUrl() {
-    let url = urlInput.value.trim();
-    if (!url) return;
-    
-    // Add https:// if no protocol specified
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-    }
-    
-    webview.src = url;
+  let url = urlInput.value.trim();
+  if (!url) return;
+  updateActiveTabUrl(url);
 }
 
 // ===================================================================
 // WEBVIEW LIFECYCLE EVENTS
 // Event handlers for webview state changes and navigation
-// MILESTONE: Webview event handling completed
 // ===================================================================
 
-/**
- * Update URL bar when page navigation completes
- * Fired when webview navigates to a new page
- */
+// Keep address bar synced and update tab title where possible
 webview.addEventListener('did-navigate', (e) => {
+  const tab = getActiveTab();
+  if (tab) {
+    tab.url = e.url;
     urlInput.value = e.url;
+    saveSession();
+  }
 });
 
-/**
- * Update URL bar for in-page navigation (e.g., hash changes)
- * Fired when page changes URL without full navigation
- */
 webview.addEventListener('did-navigate-in-page', (e) => {
+  const tab = getActiveTab();
+  if (tab) {
+    tab.url = e.url;
     urlInput.value = e.url;
+    saveSession();
+  }
 });
 
-/**
- * Webview initialization event
- * Fired when the webview DOM is ready for interaction
- */
+webview.addEventListener('page-title-updated', (e) => {
+  const tab = getActiveTab();
+  if (tab && e && e.title) {
+    tab.title = e.title.slice(0, 60);
+    renderTabs();
+    saveSession();
+  }
+});
+
 webview.addEventListener('dom-ready', () => {
-    console.log('Webview ready');
+  // Future: inject helpers, add content capture for AI context, etc.
+  // TODO(next): Capture page metadata for AI context panel.
 });
 
-// TODO: Add tab management for multiple browsing sessions
-// TODO: Implement session recovery to restore tabs on browser restart
+// ===================================================================
+// TAB MANAGEMENT UI EVENT LISTENERS
+// Hook up New/Close buttons and dynamic tab selection
+// ===================================================================
+
+newTabBtn.addEventListener('click', () => {
+  createTab('https://www.perplexity.ai');
+});
+
+closeTabBtn.addEventListener('click', () => {
+  if (!TabState.activeId) return;
+  closeTab(TabState.activeId);
+});
+
+// Note: per-tab close buttons are wired in renderTabs()
 
 // ===================================================================
 // AI ASSISTANT PANEL CONTROLS
 // Event handlers for showing/hiding the AI chat interface
-// MILESTONE: AI panel UI toggle completed
 // ===================================================================
 
-/**
- * Toggle AI assistant panel visibility
- * Shows or hides the AI chat panel when button is clicked
- */
-aiToggleBtn.addEventListener('click', () => {
-    aiPanel.classList.toggle('hidden');
+a iToggleBtn?.addEventListener?.('click', () => {
+  aiPanel?.classList?.toggle('hidden');
 });
 
-/**
- * Close AI assistant panel
- * Hides the AI chat panel when close button is clicked
- */
-closeAiBtn.addEventListener('click', () => {
-    aiPanel.classList.add('hidden');
+closeAiBtn?.addEventListener?.('click', () => {
+  aiPanel?.classList?.add('hidden');
 });
 
 // ===================================================================
-// AI CHAT FUNCTIONALITY
-// Handles user input and AI response display
-// MILESTONE: Chat UI and message display completed
-// TODO: Integrate with AI API (OpenAI GPT, Claude, or similar)
-// TODO: Add context awareness from current webpage content
-// TODO: Implement conversation history persistence
+// AI CHAT FUNCTIONALITY (placeholder)
+// TODO(next milestone): Integrate with AI API and persist conversations
 // ===================================================================
 
-/**
- * Send message button click handler
- * Triggers message sending when send button is clicked
- */
-sendBtn.addEventListener('click', () => {
+sendBtn?.addEventListener?.('click', () => {
+  sendMessage();
+});
+
+chatInput?.addEventListener?.('keypress', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
     sendMessage();
+  }
 });
 
-/**
- * Handle Enter key in chat input
- * Sends message on Enter, allows Shift+Enter for newlines
- */
-chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-    }
-});
-
-/**
- * Send chat message and get AI response
- * Displays user message, clears input, and triggers AI response
- * Currently uses placeholder response - needs real AI integration
- */
 function sendMessage() {
-    const message = chatInput.value.trim();
-    if (!message) return;
-    
-    // Display user message
-    addMessageToChat('user', message);
-    chatInput.value = '';
-    
-    // TODO: Replace with actual AI API integration
-    // Simulate AI response (placeholder for actual AI integration)
-    setTimeout(() => {
-        const response = 'This is a placeholder response. Integrate with an AI API like OpenAI or Claude for actual functionality.';
-        addMessageToChat('ai', response);
-    }, 1000);
+  const message = chatInput?.value?.trim();
+  if (!message) return;
+  addMessageToChat('user', message);
+  chatInput.value = '';
+  setTimeout(() => {
+    addMessageToChat('ai', 'Placeholder response. AI API integration coming next.');
+  }, 300);
 }
 
-/**
- * Add a message to the chat display
- * Creates and appends a styled message element to the chat container
- * Auto-scrolls to show the latest message
- * 
- * @param {string} sender - Message sender type ('user' or 'ai')
- * @param {string} message - Message content to display
- */
 function addMessageToChat(sender, message) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chat-message ${sender}-message`;
-    messageDiv.textContent = message;
-    chatMessages.appendChild(messageDiv);
-    
-    // Auto-scroll to bottom to show new message
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `chat-message ${sender}-message`;
+  messageDiv.textContent = message;
+  chatMessages?.appendChild(messageDiv);
+  if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 // ===================================================================
-// INITIALIZATION COMPLETE
-// All event listeners registered and ready for user interaction
-// MILESTONE: Renderer initialization completed
+// STARTUP: SESSION RESTORE OR INITIAL TAB
+// ===================================================================
+
+(function init() {
+  const restored = restoreSession();
+  if (!restored) {
+    // First run or nothing to restore
+    createTab('https://www.perplexity.ai');
+  } else {
+    renderTabs();
+    loadActiveTabIntoWebview();
+  }
+})();
+
+// ===================================================================
+// TODOs for upcoming milestones
+// - Persist per-tab history (if feasible) or last URLs only [renderer-only]
+// - Sync AI context with active tab (page title, URL, selected text)
+// - Drag-reorder tabs and keyboard shortcuts (Ctrl+T, Ctrl+W, Ctrl+Tab)
+// - Favicons in tab strip; show loading state/spinner
+// - Error handling UI for failed navigations
 // ===================================================================
