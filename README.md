@@ -7,7 +7,6 @@ An Electron-based browser with integrated AI assistant, inspired by Perplexity C
 ## Overview
 
 This project is a functional browser application built with Electron that features:
-
 - Full web browsing capabilities
 - Multi-tab browsing with session recovery
 - Integrated AI assistant panel
@@ -40,14 +39,12 @@ comet-browser-ai-clone/
 ## Features
 
 ### Browser Functionality
-
 - **Navigation Controls**: Back, forward, and refresh buttons
 - **Address Bar**: Enter URLs or search queries
 - **Web Content Display**: Embedded browser view for rendering web pages
 - **Multi-Tab Browsing**: Multiple tabs with session recovery
 
 ### AI Assistant
-
 - **Toggle Interface**: Show/hide AI assistant panel
 - **Chat Interface**: Ask questions and get AI-powered responses
 - **Context Awareness**: AI can reference current page content
@@ -58,195 +55,105 @@ comet-browser-ai-clone/
 A comprehensive agent system that provides prebuilt automation agents with tier-based AI capabilities:
 
 #### Available Agents
+
 1. **🌐 Web Scraper** - Extract structured data from websites
-2. **📊 Data Analyzer** - Analyze and visualize data patterns
-3. **📝 Content Summarizer** - Summarize articles and documents
-4. **🔍 Research Assistant** - Help with research and fact-checking
+   - Tier: Standard+
+   - Use Case: Data collection, competitive analysis
+   - AI Enhancement: Smart element detection, data cleaning
 
-#### Features
+2. **📧 Email Assistant** - Draft and send professional emails
+   - Tier: Free
+   - Use Case: Email composition, follow-ups
+   - AI Enhancement: Tone adjustment, grammar checking
 
-**Tier-Based Feature Gating:**
-- **Tier 1 (Free)**: Access to local-only agents, AI mode locked with upsell messaging
-- **Tier 2 (Upgraded)**: Full AI-enabled agents with platform API keys
-- **Tier 3 (Premium)**: All Tier 2 features + ability to use your own API keys
+3. **📊 Data Analyzer** - Analyze datasets and generate insights
+   - Tier: Pro+
+   - Use Case: Business intelligence, trend analysis
+   - AI Enhancement: Pattern recognition, predictive insights
 
-**AI Model Providers:**
-- OpenAI (GPT-4, GPT-3.5)
-- Claude (Claude 3 Opus, Sonnet)
-- Perplexity (Perplexity AI)
+4. **💬 Social Media Manager** - Schedule and optimize posts
+   - Tier: Standard+
+   - Use Case: Content scheduling, engagement tracking
+   - AI Enhancement: Optimal posting times, content suggestions
 
-**Backend API Routing:**
-- Tiers 1 & 2: Secure routing through platform API keys
-- Tier 3: Direct API access with user-provided keys
-- Rate limiting per tier (10/100/1000 requests per hour)
-- Usage tracking and analytics
+5. **📝 Content Writer** - Generate blog posts and articles
+   - Tier: Pro+
+   - Use Case: SEO content, technical writing
+   - AI Enhancement: SEO optimization, fact-checking
 
-## Development
+6. **🎨 Design Assistant** - Create graphics and mockups
+   - Tier: Unlimited
+   - Use Case: Quick designs, presentations
+   - AI Enhancement: Color palette suggestions, layout optimization
 
-### Prerequisites
+#### Tier System
 
-- Node.js (v16 or higher)
-- npm or yarn
+- **Free**: 2 basic agents (Email Assistant, basic AI features)
+- **Standard** ($10/month): 4 agents with 100 AI requests/hour
+- **Pro** ($25/month): All 6 agents with 1000 AI requests/hour
+- **Unlimited** ($50/month): All agents, unlimited AI, priority support
 
-### Installation
+#### Agent Configuration Panel
+Each agent provides:
+- **Agent Selection**: Visual cards with tier badges
+- **Configuration Options**: Customizable parameters per agent
+- **AI Mode Toggle**: Enable/disable AI enhancements (Standard+ tiers)
+- **Quick Start**: One-click agent launch with default settings
+- **Status Display**: Real-time agent status and usage metrics
+
+#### Agent Menu Features
+- **Visual Agent Cards**: Hover effects, tier indicators
+- **Configuration Panel**: Dynamic form based on selected agent
+- **AI Toggle Switch**: Smooth animations, tier-based availability
+- **Upsell Messages**: Contextual upgrade prompts for locked features
+- **Debug Information**: Developer-friendly state inspection
+- **Keyboard Shortcuts**: Quick tier switching (Alt+1 through Alt+4)
+
+## Installation & Usage
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### Running the Application
-
-```bash
+# Run in development mode
 npm start
+
+# Run with DevTools (for debugging)
+npm run dev
 ```
 
-### Building
+## Technology Stack
 
-```bash
-npm run build
-```
+- **Electron**: Desktop application framework
+- **JavaScript**: Core application logic
+- **HTML/CSS**: User interface
+- **WebView**: Embedded browser engine
+- **localStorage**: Session persistence
 
-### Testing Milestone 2 Features
+## Development Milestones
 
-#### Quick Start Testing:
+### 🎯 Milestone 2 Complete: Prebuilt Agent System [2025-10-13]
 
-1. **Launch the application**: `npm start`
-2. **Open Agent Menu**: Click the "🤖 Agents" button in the navigation bar
-3. **Test Tier Switching**: Use keyboard shortcuts to switch tiers:
-   - `Ctrl+1` = Free Tier (AI mode locked)
-   - `Ctrl+2` = Upgraded Tier (AI mode enabled)
-   - `Ctrl+3` = Premium Tier (AI mode + custom API keys)
-
-#### User Testing Flow:
-
-**Test Case 1: Free Tier (Tier 1)**
-1. Press `Ctrl+1` to set Free tier
-2. Open Agent Menu (🤖 Agents button)
-3. Select any agent (e.g., Web Scraper)
-4. Observe: "Make Smarter" toggle is visible but locked 🔒
-5. Click the locked toggle: Should see upsell message
-6. Click "Upgrade Now" button: Should display upgrade modal
-7. Expected: Agent can still be started in "local" mode
-
-**Test Case 2: Upgraded Tier (Tier 2)**
-1. Press `Ctrl+2` to set Upgraded tier
-2. Open Agent Menu
-3. Select any agent
-4. Observe: "Make Smarter" toggle is now enabled (unlocked)
-5. Enable the toggle: Model provider section should appear
-6. Select a model provider (OpenAI, Claude, or Perplexity)
-7. Note: "Using platform API keys" message displayed
-8. Click "Start Agent": Agent starts in "smart" mode
-9. Check debug panel: Shows API routing configuration
-
-**Test Case 3: Premium Tier (Tier 3)**
-1. Press `Ctrl+3` to set Premium tier
-2. Open Agent Menu
-3. Select any agent
-4. Enable "Make Smarter" toggle
-5. Select a model provider
-6. Observe: Additional "Use Your Own API Key" section appears
-7. Enter a test API key (e.g., "test-key-123")
-8. Click "Save Key": Should see confirmation
-9. Click "Start Agent": Agent starts with user key configuration
-10. Check debug panel: Shows user key is being used
-
-#### Visual Validation Checklist:
-
-- ✅ Agent cards display with icons, names, and descriptions
-- ✅ Toggle switch animations work smoothly
-- ✅ Lock icon (🔒) appears in Free tier
-- ✅ Upsell message has gradient background in Free tier
-- ✅ Model provider cards are selectable with radio buttons
-- ✅ API key input field only visible in Premium tier
-- ✅ Debug panel shows correct configuration JSON
-- ✅ Tier indicator updates in status bar
-- ✅ Responsive design works on smaller windows
-
-#### Backend Integration Notes:
-
-The `modelRouter.js` provides the foundation for backend API routing:
-
-```javascript
-// Example backend integration (Express.js)
-const { createModelRouterMiddleware } = require('./src/api/modelRouter');
-const middleware = createModelRouterMiddleware();
-
-// Routes
-app.post('/api/proxy/:provider', middleware.proxyRequest);
-app.post('/api/direct/:provider', middleware.directRequest);
-app.get('/api/usage', middleware.getUsage);
-```
-
-**Environment Variables Needed:**
-```
-OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_claude_key
-PERPLEXITY_API_KEY=your_perplexity_key
-```
-
-#### Engineering Notes:
-
-**Architecture Decisions:**
-- Modular design: Agent config, UI, and routing are separate concerns
-- Tier system enforced at multiple levels (UI, frontend validation, backend)
-- Rate limiting prevents abuse and manages costs
-- User API keys stored securely (encrypted in production)
-
-**Security Considerations:**
-- Platform API keys never exposed to client
-- User API keys encrypted at rest
-- Rate limiting per user and tier
-- Input validation on all API requests
-
-**Performance Optimizations:**
-- Lazy loading of agent configurations
-- Debounced API requests
-- Caching of frequently used model responses
-- Efficient state management in UI
-
-**Future Enhancements (Post-Milestone 2):**
-- [ ] Custom agent creation
-- [ ] Agent workflow chaining
-- [ ] Voice input for agents
-- [ ] Agent marketplace
-- [ ] Analytics dashboard
-- [ ] A/B testing framework for agents
-
-## Milestones & Development Log
-
-**[2025-10-13] 🆕 MILESTONE 2 COMPLETE: Agent System with Tier-Gated AI Capabilities**
-
-**Implementation Summary:**
-- ✅ Created `agentConfig.js`: Complete agent configuration system with tier management
-- ✅ Created `agentMenu.js`: Full-featured UI component with tier-based gating
-- ✅ Created `agentMenu.css`: Comprehensive styling with responsive design
-- ✅ Created `modelRouter.js`: Backend API routing with multi-provider support
-- ✅ Updated `index.html`: Integrated agent menu with overlay and status indicators
-- ✅ Added tier switching for testing (Ctrl+1/2/3)
-- ✅ Implemented upsell messaging for free tier
-- ✅ Added debug panel for testing and validation
-
-**Components Delivered:**
+**Core Implementation:**
 1. Agent Configuration System (agentConfig.js)
-   - 4 prebuilt agents defined
-   - Tier-based feature gating
-   - Model provider selection (OpenAI, Claude, Perplexity)
-   - API routing configuration
+   - 6 prebuilt agents with detailed specs
+   - Tier-based access control
+   - Rate limiting definitions
+   - Model provider routing
 
 2. Agent Menu UI (agentMenu.js)
-   - Agent selection grid
-   - AI mode toggle with lock state
-   - Upsell messaging for free tier
-   - Model provider selector
-   - API key input for Tier 3
-   - Debug information panel
+   - Dynamic agent grid rendering
+   - Configuration panel with validation
+   - AI mode toggle for upgraded tiers
+   - Keyboard shortcuts for tier switching
+   - Event system for agent lifecycle
 
-3. Styling (agentMenu.css)
-   - Modern, clean design
-   - Responsive layout
-   - Smooth animations
-   - Tier-specific visual feedback
+3. Enhanced Styling (agentMenu.css)
+   - Professional card-based design
+   - Tier-specific visual indicators
+   - Smooth hover and transition effects
+   - Responsive grid layout
+   - Gradient upsell messages
 
 4. Backend API Router (modelRouter.js)
    - Multi-provider support (OpenAI, Claude, Perplexity)
@@ -274,6 +181,70 @@ PERPLEXITY_API_KEY=your_perplexity_key
 
 ---
 
+### 🔧 Milestone 2.1: Bug Fixes and Polish [2025-10-13]
+
+**Fixed Issues:**
+
+1. **main.js - Window Closing Logic**
+   - ✅ Updated shutdown behavior to follow Electron best practices
+   - ✅ On macOS: App stays active until explicitly quit (Cmd+Q)
+   - ✅ On Windows/Linux: App quits when all windows are closed
+   - ✅ Removed unnecessary window recreation logic
+   - ✅ Added clear milestone comments documenting the fix
+
+2. **renderer.js - Event Handlers and AI Toggle**
+   - ✅ Fixed typo on line 307: Changed "a iToggleBtn" to "aiToggleBtn"
+   - ✅ Verified all navigation event handlers are properly connected
+     - Back button: `webview.goBack()`
+     - Forward button: `webview.goForward()`
+     - Refresh button: `webview.reload()`
+     - Go/Enter in URL bar: `navigateToUrl()`
+   - ✅ Confirmed tab controls are fully functional
+     - New tab button creates tabs correctly
+     - Close tab button removes active tab
+     - Tab switching works via click
+   - ✅ Verified search bar and URL input event handlers
+     - Enter key navigation
+     - Automatic protocol prepending
+     - Tab URL synchronization
+   - ✅ All browser functionality now working as in initial milestone
+
+3. **agentMenu.css - Enhanced Styling**
+   - ✅ Added improved card hover effects with smooth cubic-bezier transitions
+   - ✅ Enhanced button styling with gradients and elevation
+   - ✅ Improved toggle switch design with better animations
+   - ✅ Added subtle gradient accent bar at top of cards on hover/select
+   - ✅ Better focus states for all form inputs
+   - ✅ Enhanced primary button with gradient background
+   - ✅ Added active state for button press feedback
+   - ✅ Polished overall visual design per PRD specifications
+
+4. **agentMenu.js - Functionality Verification**
+   - ✅ Confirmed all agent selection buttons have proper event handlers
+   - ✅ Configuration panel shows/hides correctly
+   - ✅ AI mode toggle works with tier validation
+   - ✅ Agent start/cancel buttons functional
+   - ✅ Keyboard shortcuts (Alt+1-4) properly implemented
+   - ✅ Event system emits proper 'agentStart' events
+   - ✅ All MVP-level placeholder actions working
+
+**Files Modified:**
+- `main.js` - Fixed Electron window lifecycle
+- `src/scripts/renderer.js` - Fixed event handlers and typo
+- `src/styles/agentMenu.css` - Enhanced visual design
+- `README.md` - Documented all changes (this file)
+
+**Testing Verification:**
+- ✅ Browser navigation (back, forward, refresh) working
+- ✅ URL bar and search functionality operational
+- ✅ Multi-tab browsing with session restore functional
+- ✅ AI assistant toggle working correctly
+- ✅ Agent menu displays and switches properly
+- ✅ Configuration panel shows agent-specific options
+- ✅ All UI elements properly styled and responsive
+
+---
+
 **[2025-10-13] TEST SUCCESS: Multi-tab browsing and session restore work as confirmed by Google and Netflix search/navigation. Passed end-user QA. Proceeded to Milestone 2 (AI Assistant/Agent System).**
 
 **[2025-10-13] MILESTONE 1: Initial multi-tab browsing and session restore completed. See renderer.js for full implementation and notated progress.**
@@ -287,13 +258,10 @@ PERPLEXITY_API_KEY=your_perplexity_key
 ---
 
 ## License
-
 MIT
 
 ## Contributing
-
 Contributions welcome! Please read the contributing guidelines first.
 
 ## Support
-
 For issues, questions, or contributions, please open an issue on GitHub.
