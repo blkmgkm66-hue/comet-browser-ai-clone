@@ -1,12 +1,13 @@
 # Agentic Browser Automation Platform — Product Requirements Document (PRD)
 
 ## 1. Product Overview and Goals
+
 The Agentic Browser Automation Platform is a modular desktop browser built on Chromium/Electron that embeds a multi-model AI assistant and agentic automation engine. It enables users and developers to compose, run, and share automated browsing workflows that combine deterministic steps with reasoning-driven actions.
 
 ### Goals
 - Deliver a reliable Electron-based browser with modern navigation and isolation primitives.
 - Provide an integrated, multi-model AI assistant for reasoning, extraction, and action planning.
-- Ship an agentic workflow engine that can record, edit, simulate, and execute tasks safely.
+- Leverage best-in-class open-source libraries for agentic workflows, graph visualization, and workflow automation.
 - Offer a visual workflow builder and marketplace for sharing automations and agents.
 - Ensure strong security via sandboxing, permissions, an API key vault, and auditability.
 - Build a sustainable ecosystem with a sandbox for testing and monetization options.
@@ -14,6 +15,7 @@ The Agentic Browser Automation Platform is a modular desktop browser built on Ch
 ### Non-Goals (MVP)
 - Full mobile clients (focus on desktop: macOS, Windows, Linux).
 - Server-side hosted browser farms (local-first with optional remote runners later).
+- Custom development of workflow engines, graph databases, or visualization frameworks (leveraging open-source solutions instead).
 
 ## 2. Electron Browser Shell - Core Foundation
 
@@ -62,174 +64,276 @@ The Electron browser shell serves as the foundational layer of our agentic platf
 #### Browser Engine
 - **Base**: Latest stable Chromium via Electron
 - **JavaScript Engine**: V8 with modern ES2023 features
-- **Rendering**: Blink rendering engine with hardware acceleration
-- **Network Stack**: Chromium network stack with custom proxy support
+- **Rendering**: Blink layout engine with hardware acceleration
+- **Network Stack**: Chromium networking with custom request interceptors
 
-### 2.4 Implementation Clarifications
+## 3. Core MVP Features
 
-#### From Previous Discussions:
-1. **Webview Isolation**: Each tab uses Electron's `webview` tag with `nodeintegration=false` and `contextisolation=true`
-2. **IPC Security**: All communication between main process and renderers uses contextBridge API
-3. **Extension Support**: Limited extension API for AI agents, not full Chrome extension compatibility
-4. **Resource Management**: Automatic tab suspension for memory optimization
-5. **Crash Recovery**: Tab-level crash recovery without affecting other tabs or main process
+### 3.1 Open-Source Agentic Framework Integration
 
-#### Security Hardening
-- **CSP Headers**: Enforce strict Content-Security-Policy on all internal pages
-- **Remote Module**: Completely disabled in all renderer processes
-- **Node Integration**: Disabled in webviews, enabled only in main process
-- **Context Isolation**: Mandatory for all renderer processes
-- **Secure Defaults**: All file:// and chrome:// protocols restricted by default
+#### LangGraph Integration
+**Purpose**: State-based agent orchestration and multi-agent workflows
 
-### 2.5 Development Methodology & Documentation
+**Implementation Details**:
+- **Version**: LangGraph 0.2.0+
+- **Core Features**: 
+  - State graph definition for complex agent workflows
+  - Conditional routing between agent nodes
+  - Human-in-the-loop approval points
+  - Persistence layer for workflow state
+- **Integration Points**:
+  - Main process service for LangGraph runtime
+  - IPC bridge for renderer communication
+  - SQLite adapter for workflow state persistence
+  - Custom LangGraph tools for browser automation
 
-**Project Documentation Standards**: As we develop this platform, we will maintain comprehensive documentation practices to ensure code quality and knowledge transfer:
+**Key Capabilities**:
+- Define multi-step agent workflows as directed graphs
+- Conditional branching based on agent outputs
+- Parallel execution of independent agent tasks
+- Error recovery and retry mechanisms
+- Workflow versioning and rollback
 
-- **Milestone Tracking**: Each development milestone will be documented in the README.md with completion status, key learnings, and blockers resolved
-- **Code Annotations**: All significant code changes will include inline documentation explaining design decisions and implementation rationale  
-- **Test Documentation**: Unit tests, integration tests, and end-to-end tests will include descriptive comments explaining test scenarios and expected behaviors
-- **API Documentation**: All public APIs and internal interfaces will maintain up-to-date JSDoc documentation
-- **Architecture Decision Records (ADRs)**: Major architectural decisions will be recorded with context, alternatives considered, and rationale for chosen approach
-- **Performance Benchmarks**: Performance tests and benchmarks will be documented with baseline measurements and regression detection
-- **Security Reviews**: Security considerations and threat model analysis will be documented for each major component
+#### n8n Workflow Engine Integration
+**Purpose**: Visual workflow builder and execution engine
 
-**Best Practices Commitment**: This documentation-first approach ensures maintainability, enables effective team collaboration, and provides clear audit trails for all development decisions. Future milestones, tests, and code explanations will be systematically recorded to maintain project quality and facilitate onboarding of new contributors.
+**Implementation Details**:
+- **Version**: n8n 1.0.0+ (embedded mode)
+- **Core Features**:
+  - Node-based visual workflow editor
+  - 400+ built-in integrations
+  - Custom browser automation nodes
+  - Trigger-based and scheduled execution
+- **Integration Architecture**:
+  - Embedded n8n server in Electron main process
+  - Custom browser automation node package
+  - Workflow persistence in local SQLite
+  - API bridge for workflow management
 
-## 3. Core MVP Features and User Stories
+**Custom Browser Nodes**:
+- Navigate to URL
+- Extract page data
+- Fill forms and interact with elements
+- Take screenshots
+- Wait for conditions
+- Multi-tab orchestration
 
-### 3.1 Core Features
-- **Browser Shell (Electron + Chromium)**
-  - Tabs, navigation (back/forward/reload), address/search bar, downloads.
-  - Isolated webviews per tab, site permissions prompt, per-tab process model.
-- **AI Assistant Panel**
-  - Multi-model routing (OpenAI, Anthropic, local models via Ollama). 
-  - Context tools: page DOM snapshot, selection-to-context, screenshot-to-context.
-  - Actions: summarize page, extract data, generate steps, validate results.
-- **Agentic Workflow Engine**
-  - Deterministic steps (click, type, select, wait, scrape) + AI-planned steps.
-  - Recording: macro recorder that converts user actions into editable steps.
-  - Variables, branching, loops, retries, timeouts, error handling.
-  - Human-in-the-loop checkpoints and dry-run/simulation mode.
-- **Visual Workflow Builder**
-  - Node/graph editor with drag-and-drop blocks (Input, Navigate, Click, Extract, LLM, Condition, Loop, Save).
-  - Inspector panel for parameters, test run, and inline validation.
-- **Data Extractor**
-  - Template-based (CSS/XPath/Regex) and AI-assisted extraction with schema mapping to JSON/CSV.
-- **Summarizer**
-  - Page/selection summarization with citations and multi-tab synthesis.
-- **Sandbox and Logs**
-  - Sandboxed runner with network, file, and clipboard permissions.
-  - Structured run logs with step traces, snapshots, and diffs.
-- **Marketplace (Read-only in MVP)**
-  - Browse, install, and rate community agents/flows; local install with provenance.
-- **Secrets Vault**
-  - Encrypted API key management (OpenAI, Anthropic, custom HTTP, OAuth tokens).
+### 3.2 Graph Visualization & Database Integration
 
-### 3.2 User Stories
-- As a researcher, I can highlight a section and "Summarize with sources" to get a concise brief with citations.
-- As an analyst, I can record steps on an e-commerce site, parameterize product keywords, and run the flow daily.
-- As an operations user, I can build a data extraction flow returning CSV and schedule it locally.
-- As a QA engineer, I can simulate a multi-step sign-in flow in sandbox with fake credentials and verify DOM assertions.
-- As a developer, I can publish a signed agent to the marketplace with documentation and versioning.
+#### Cytoscape.js Workflow Visualization
+**Purpose**: Interactive workflow and dependency visualization
+
+**Implementation Details**:
+- **Version**: Cytoscape.js 3.26.0+
+- **Renderer**: Canvas-based for performance
+- **Layout Engines**: 
+  - Dagre for hierarchical workflows
+  - Cola for force-directed graphs
+  - Breadthfirst for simple trees
+- **Features**:
+  - Real-time workflow execution visualization
+  - Interactive node editing
+  - Zoom and pan with minimap
+  - Export to PNG/SVG/PDF
+
+**Integration Points**:
+- React component wrapper for Electron renderer
+- Live data binding to workflow state
+- Custom node types for different automation steps
+- Interactive edge editing for workflow connections
+
+#### Neo4j Knowledge Graph (Optional)
+**Purpose**: Advanced relationship mapping and workflow analytics
+
+**Implementation Details**:
+- **Version**: Neo4j Community 5.0+ (embedded)
+- **Driver**: Neo4j JavaScript Driver 5.0+
+- **Use Cases**:
+  - Website relationship mapping
+  - User behavior analysis
+  - Workflow optimization insights
+  - Agent performance analytics
+- **Data Models**:
+  - Nodes: Websites, Users, Workflows, Actions
+  - Relationships: NAVIGATES_TO, INTERACTS_WITH, DEPENDS_ON
+  - Properties: Timestamps, success rates, performance metrics
+
+### 3.3 AI Assistant Integration
+
+**Multi-Model Router**:
+- OpenAI GPT-4/GPT-3.5-turbo via API
+- Anthropic Claude via API
+- Local models via Ollama integration
+- Model selection based on task type and user preference
+
+**Context Management**:
+- DOM tree extraction and semantic analysis
+- Screenshot analysis for visual reasoning
+- Conversation history with workflow context
+- Multi-tab context aggregation
 
 ## 4. Technical Architecture
 
-### 4.1 System Components
-- **Main Process**: Electron main process managing windows, security, and system integration
-- **Renderer Processes**: Isolated browser tabs with webview containers
-- **AI Service**: Multi-model routing and prompt management service
-- **Automation Engine**: Playwright-based automation with custom extensions
-- **Data Layer**: SQLite for local storage, encrypted vault for secrets
-- **IPC Layer**: Secure communication between processes via contextBridge
+### 4.1 System Architecture
+
+```
+Electron Main Process
+├── Browser Window Manager
+├── LangGraph Runtime Service
+├── n8n Embedded Server
+├── Neo4j Embedded Database (optional)
+├── Security & Vault Manager
+└── IPC Bridge
+
+Renderer Process
+├── React/Electron Frontend
+├── Cytoscape.js Visualization
+├── AI Chat Interface
+├── Workflow Builder UI (n8n embedded)
+└── Browser Tabs
+```
 
 ### 4.2 Technology Stack
-- **Frontend**: Electron, React/TypeScript, Tailwind CSS
-- **Backend Services**: Node.js, SQLite, Playwright
-- **AI Integration**: OpenAI SDK, Anthropic SDK, Ollama client
-- **Security**: Keytar (OS keychain), AES-GCM encryption
-- **Build Tools**: Electron Builder, Webpack, ESLint, Prettier
 
-## 5. UI/UX Design Requirements
+#### Core Framework
+- **Browser Engine**: Electron 28.0+ with Chromium 120+
+- **Frontend**: React 18+ with TypeScript
+- **State Management**: Zustand for client state
+- **Styling**: Tailwind CSS with custom design tokens
 
-### 5.1 Design System
-- **Theme**: Dark blue glassmorphism with high contrast accessibility
-- **Layout**: Sidebar navigation with collapsible panels
-- **Components**: Modern component library with consistent spacing and typography
-- **Responsive**: Adaptive layout for different screen sizes (minimum 1024px width)
+#### Open-Source Integrations
+- **Agent Framework**: LangGraph 0.2.0+
+- **Workflow Engine**: n8n 1.0.0+ (embedded)
+- **Graph Visualization**: Cytoscape.js 3.26.0+
+- **Graph Database**: Neo4j Community 5.0+ (optional)
+- **Automation**: Playwright 1.40+ for browser control
 
-### 5.2 Key Interface Elements
-- **Browser Tabs**: Chrome-like tab interface with close buttons and favicon support
-- **AI Assistant Panel**: Collapsible right sidebar with chat interface
-- **Workflow Builder**: Canvas-based node editor with drag-and-drop functionality
-- **Settings & Vault**: Modal-based configuration with security-focused UX
+#### Backend Services
+- **Database**: SQLite with better-sqlite3
+- **Security**: Keytar for OS keychain integration
+- **Process Management**: Node.js child_process for sandboxing
+- **File System**: Node.js fs with permission controls
+
+#### AI & ML
+- **LLM APIs**: OpenAI, Anthropic, local Ollama
+- **Vision**: GPT-4V for screenshot analysis
+- **Embeddings**: OpenAI text-embedding-ada-002
+- **Vector Storage**: Chroma embedded vector database
+
+### 4.3 Data Flow
+
+**Workflow Creation**:
+1. User creates workflow in n8n visual editor
+2. Workflow definition stored in SQLite
+3. LangGraph converts n8n workflow to state graph
+4. Cytoscape.js renders interactive visualization
+
+**Workflow Execution**:
+1. LangGraph runtime executes state graph
+2. Browser automation via Playwright integration
+3. AI assistant provides reasoning at decision points
+4. Progress updates via IPC to renderer
+5. Results stored with Neo4j relationship tracking
+
+## 5. UI/UX Design
+
+### 5.1 Layout & Navigation
+- **Primary Interface**: Standard browser with integrated AI sidebar
+- **Workflow Builder**: Embedded n8n editor with custom browser nodes
+- **Graph Viewer**: Cytoscape.js visualization panel
+- **Settings & Vault**: Modal-based configuration with security focus
+
+### 5.2 Design System
+- **Theme**: Dark mode with glassmorphism effects
+- **Typography**: Inter font family with clear hierarchy
+- **Color Palette**: Dark blues, purples, and accent greens
+- **Components**: Custom React components with Tailwind styling
 
 ## 6. Marketplace, Sandbox, and Monetization Modules
 
 ### Marketplace (MVP)
-- Browse curated agents/flows with metadata, version, author, permissions, and ratings.
-- Install locally with provenance/signature verification; un-install and update flows.
+- Browse curated agents/flows with metadata, version, author, permissions, and ratings
+- Install locally with provenance/signature verification; uninstall and update flows
+- Integration with n8n community workflows and LangGraph templates
 
 ### Sandbox
-- Separate runner process with OS-level sandbox flags; no direct disk or network access without permission.
-- Declarative permissions per flow: network domains allowlist, file read/write scopes, clipboard, screenshots.
-- Resource quotas: CPU time per step, memory limit, navigation timeout, request budget.
+- Separate runner process with OS-level sandbox flags
+- Declarative permissions per flow: network domains allowlist, file read/write scopes
+- Resource quotas: CPU time per step, memory limit, navigation timeout
 
 ### Monetization
-- Optional paid listings and revenue share in future releases.
-- MVP: free marketplace with donation links and local license keys for paid agents.
+- Optional paid listings and revenue share in future releases
+- MVP: free marketplace with donation links and local license keys
 
 ## 7. Security Requirements
 
 ### Secrets & API Vault
-- Encrypted at rest using OS keychain (Keytar) for key wrapping; AES-GCM for ciphertext.
-- Access brokered by main process; never exposed to renderer logs; redaction on output.
+- Encrypted at rest using OS keychain (Keytar) for key wrapping
+- AES-GCM for ciphertext with secure key derivation
+- Access brokered by main process; never exposed to renderer logs
 
 ### Sandboxing & Permissions
-- Electron sandbox, contextIsolation, disable remote module, strict Content-Security-Policy.
-- Per-flow permission manifest reviewed at install/run time with user prompts and audit logs.
+- Electron sandbox, contextIsolation, disable remote module
+- Strict Content-Security-Policy for all renderer processes
+- Per-flow permission manifest reviewed at install/run time
 
 ### Authentication & 2FA
-- Built-in TOTP for critical actions (revealing secrets, publishing agents).
-- Support OAuth device flow for third-party APIs; token storage in vault.
+- Built-in TOTP for critical actions (revealing secrets, publishing agents)
+- OAuth device flow support for third-party APIs
+- Secure token storage in encrypted vault
 
-### Compliance & Privacy
-- Data minimization; local-first storage; export/delete my data; audit log with hashes.
-- Optional enterprise mode: admin policies, SSO, and SOC 2 roadmap.
-
-### Supply Chain
-- Signed marketplace packages; integrity verified on install and run; SBOM and update checks.
-
-## 8. Actionable Roadmap
+## 8. Updated Roadmap
 
 ### Milestone 0 — Foundations (Weeks 1-3)
-- Bootstrap Electron app shell with tabs, sidebar, and webview isolation.
-- Integrate Playwright automation layer and IPC bridge APIs.
-- Implement secrets vault MVP with OS keychain; set up SQLite schema.
+- Bootstrap Electron app shell with tabs, sidebar, and webview isolation
+- Integrate Playwright automation layer and IPC bridge APIs
+- Implement secrets vault MVP with OS keychain integration
+- Set up SQLite schema for workflows and configuration
 
-### Milestone 1 — Assistant + Extractor (Weeks 4-6)
-- Add AI router with OpenAI/Anthropic and local model support; context tools (DOM, screenshot).
-- Ship summarizer and extractor agents; export to CSV/JSON with schema mapping.
-- Implement selection-to-context and multi-tab summarization.
+### Milestone 1 — Open-Source Integration (Weeks 4-6)
+- **LangGraph Integration**: Embed LangGraph runtime in main process
+- **n8n Integration**: Set up embedded n8n server with custom browser nodes
+- **Cytoscape.js Setup**: Implement basic graph visualization components
+- **AI Router**: Add multi-model AI support with context tools
 
-### Milestone 2 — Recorder + Builder (Weeks 7-9)
-- Build macro recorder; generate step list with selectors; edit in builder.
-- Implement visual workflow builder with variables, conditionals, and retry.
-- Add run logs with snapshots, diff viewer, and error surfaces.
+### Milestone 2 — Workflow Builder (Weeks 7-9)
+- **n8n Editor**: Integrate n8n visual workflow builder in renderer
+- **Custom Nodes**: Develop browser automation nodes for n8n
+- **LangGraph Bridge**: Convert n8n workflows to LangGraph state graphs
+- **Live Visualization**: Real-time workflow execution in Cytoscape.js
 
-### Milestone 3 — Sandbox + Permissions (Weeks 10-12)
-- Harden Electron security settings; sandbox runner processes; permission prompts.
-- Enforce per-flow manifest; implement resource quotas and safe eval.
+### Milestone 3 — Advanced Features (Weeks 10-12)
+- **Neo4j Integration**: Embed Neo4j for relationship tracking (optional)
+- **Workflow Analytics**: Performance metrics and optimization insights
+- **Advanced AI**: Multi-modal reasoning with screenshot analysis
+- **Security Hardening**: Sandbox enforcement and permission systems
 
-### Milestone 4 — Marketplace Preview (Weeks 13-14)
-- Read-only marketplace UI; install and run sample signed agents.
-- Provenance verification, versioning, and uninstall/update flows.
+### Milestone 4 — Marketplace Integration (Weeks 13-14)
+- **Community Workflows**: Import n8n community workflows
+- **LangGraph Templates**: Curated agent workflow templates
+- **Sharing & Publishing**: Export and share workflow definitions
+- **Version Control**: Workflow versioning and rollback capabilities
 
 ### Milestone 5 — Polish & Release (Weeks 15-16)
-- Glassmorphism design tokens, dark blue theme, and accessibility pass.
-- Stability, telemetry opt-in, docs, and example flows.
+- **UI Polish**: Glassmorphism design implementation
+- **Performance**: Optimize memory usage and startup time
+- **Documentation**: User guides and developer documentation
+- **Testing**: Comprehensive test suite and stability improvements
 
 ### Release Criteria
-- All MVP acceptance criteria met; no P0 security issues; passes regression test suite.
+- All open-source integrations functional and stable
+- LangGraph and n8n workflows execute reliably
+- Cytoscape.js visualization performs well with complex graphs
+- No P0 security issues; passes regression test suite
+- Performance targets met for memory and startup time
+
+### Integration Success Metrics
+- **LangGraph**: Successfully execute multi-step agent workflows
+- **n8n**: Create and run workflows with 10+ browser automation nodes
+- **Cytoscape.js**: Render and interact with graphs of 100+ nodes smoothly
+- **Neo4j**: Store and query workflow relationships efficiently
+- **Overall**: Reduce custom development effort by 60% vs. building from scratch
 
 ---
-Commit message: Add comprehensive Electron browser shell PRD section with clarifications and documentation standards.
+
+**Commit message: Refactor PRD to leverage open-source libraries (LangGraph, n8n, Cytoscape.js, Neo4j) instead of custom development for agentic orchestration, workflow building, and graph visualization.**
