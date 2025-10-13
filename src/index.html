@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comet Browser AI Clone</title>
     <link rel="stylesheet" href="styles/main.css">
+    <!-- Milestone 2: Agent Menu Styling -->
+    <link rel="stylesheet" href="styles/agentMenu.css">
 </head>
 <body>
     <div id="app">
-        <!-- MILESTONE Tab controls prototyped -->
+        <!-- MILESTONE 1: Tab controls prototyped -->
         <!-- Tab Management UI -->
         <div id="tab-bar">
             <div id="tab-list">
@@ -19,8 +21,8 @@
                 <button id="close-tab-btn" title="Close Tab">✕ Close Tab</button>
             </div>
         </div>
-        <!-- TODO session recovery -->
 
+        <!-- TODO session recovery -->
         <!-- Browser Navigation Bar -->
         <div id="navbar">
             <div class="nav-controls">
@@ -33,31 +35,105 @@
                 <button id="go-btn">Go</button>
             </div>
             <button id="ai-toggle-btn" title="Toggle AI Assistant">🤖</button>
+            <!-- Milestone 2: Agent Menu Button -->
+            <button id="agent-menu-btn" title="Open Agent Menu" style="margin-left: 8px;">🤖 Agents</button>
         </div>
 
-        <!-- Main Content Area -->
-        <div id="main-content">
-            <!-- Browser View -->
-            <div id="browser-view">
-                <webview id="webview" src="https://www.google.com"></webview>
-            </div>
+        <!-- Browser Content Area -->
+        <div id="browser-view">
+            <webview id="webview" src="about:blank"></webview>
+        </div>
 
-            <!-- AI Assistant Panel -->
-            <div id="ai-panel" class="hidden">
-                <div class="ai-header">
-                    <h2>AI Assistant</h2>
-                    <button id="close-ai-btn">✕</button>
+        <!-- Milestone 2: Agent Menu Panel -->
+        <div id="agent-menu-panel" style="display: none;">
+            <div class="agent-menu-overlay" id="agentMenuOverlay"></div>
+            <div class="agent-menu-container">
+                <div class="agent-menu-header-bar">
+                    <h2>🤖 Agent Control Center</h2>
+                    <button id="close-agent-menu" class="close-btn">✕</button>
                 </div>
-                <div id="chat-container">
-                    <div id="chat-messages"></div>
-                    <div class="chat-input-area">
-                        <textarea id="chat-input" placeholder="Ask me anything about the current page..."></textarea>
-                        <button id="send-btn">Send</button>
-                    </div>
-                </div>
+                <!-- Agent Menu Content (populated by agentMenu.js) -->
+                <div id="agentMenuContent"></div>
             </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="status-bar">
+            <span id="status-text">Ready</span>
+            <span id="tier-indicator">Tier: <span id="current-tier">1 (Free)</span></span>
         </div>
     </div>
+
+    <!-- Scripts -->
     <script src="scripts/renderer.js"></script>
+    <!-- Milestone 2: Agent System Scripts -->
+    <script src="scripts/agentConfig.js"></script>
+    <script src="scripts/agentMenu.js"></script>
+    
+    <!-- Milestone 2: Initialize Agent System -->
+    <script>
+        // Initialize the agent configuration manager
+        const agentManager = new window.AgentConfig.AgentConfigManager();
+        
+        // Set default tier (for testing, can be changed)
+        // Tier 1 = Free, Tier 2 = Upgraded, Tier 3 = Premium
+        agentManager.setTier(1); // Start with free tier
+        
+        // Initialize the agent menu UI
+        const agentMenuUI = new window.AgentMenuUI('agentMenuContent', agentManager);
+        
+        // Agent menu toggle functionality
+        const agentMenuBtn = document.getElementById('agent-menu-btn');
+        const agentMenuPanel = document.getElementById('agent-menu-panel');
+        const closeAgentMenuBtn = document.getElementById('close-agent-menu');
+        const agentMenuOverlay = document.getElementById('agentMenuOverlay');
+        
+        function openAgentMenu() {
+            agentMenuPanel.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeAgentMenu() {
+            agentMenuPanel.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        agentMenuBtn.addEventListener('click', openAgentMenu);
+        closeAgentMenuBtn.addEventListener('click', closeAgentMenu);
+        agentMenuOverlay.addEventListener('click', closeAgentMenu);
+        
+        // Listen for agent start events
+        document.addEventListener('agentStart', (event) => {
+            console.log('Agent started:', event.detail);
+            const statusText = document.getElementById('status-text');
+            statusText.textContent = `Agent "${event.detail.agent.name}" running in ${event.detail.mode} mode`;
+        });
+        
+        // Update tier indicator
+        function updateTierIndicator() {
+            const tierElement = document.getElementById('current-tier');
+            const tier = agentManager.currentTier;
+            const tierNames = { 1: 'Free', 2: 'Upgraded', 3: 'Premium' };
+            tierElement.textContent = `${tier} (${tierNames[tier]})`;
+        }
+        
+        updateTierIndicator();
+        
+        // Testing: Add keyboard shortcuts to change tiers (for development)
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+1, Ctrl+2, Ctrl+3 to switch tiers
+            if (e.ctrlKey && ['1', '2', '3'].includes(e.key)) {
+                const tier = parseInt(e.key);
+                agentManager.setTier(tier);
+                agentMenuUI.setTier(tier);
+                updateTierIndicator();
+                console.log(`Tier changed to ${tier} (for testing)`);
+            }
+        });
+        
+        console.log('%c🚀 Milestone 2: Agent System Initialized', 'color: #4a90e2; font-size: 16px; font-weight: bold;');
+        console.log('Use Ctrl+1/2/3 to test different tiers');
+        console.log('Click "🤖 Agents" button to open the agent menu');
+    </script>
 </body>
 </html>
