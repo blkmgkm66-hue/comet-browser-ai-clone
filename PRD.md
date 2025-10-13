@@ -1,8 +1,75 @@
-# Agentic Browser Automation Platform — Product Requirements Document (PRD)
+# Ready Robot — Product Requirements Document (PRD)
+
+## Project Branding and Identity
+
+### Product Name: Ready Robot
+The product is officially named "Ready Robot" - a sleek, modern, futuristic browser with integrated AI automation capabilities.
+
+### Alternative Name Suggestions
+For future consideration, alternative names that capture the robotic, automation, and futuristic themes:
+- **NexusBot Browser**
+- **Quantum Agent**
+- **CyberFlow**
+- **AutoMind**
+- **RoboStream**
+- **AI Navigator**
+- **FluxBot**
+- **TechnoCore Browser**
+- **DroidFlow**
+- **MetaBrowser**
+
+### Brand Rationale
+"Ready Robot" emphasizes the immediate readiness and automation capabilities while maintaining a friendly, approachable tone that makes advanced AI automation accessible to all users.
+
+## Visual Design System and UI/UX Requirements
+
+### 2.1 Dark Theme with Futuristic Aesthetics
+- **Primary Background**: Midnight blue (#0A0E1A, #111827)
+- **Secondary Colors**: Lighter blues for contrast and accent elements
+- **Typography**: Silver metallic text for headings on dark backgrounds
+- **Font**: Incorporate provided logo font style throughout the application
+- **Overall Feel**: Sleek, modern, and futuristic design language
+
+### 2.2 Feature Cards Design
+- **Glassmorphism Effect**: Translucent cards with subtle background blur
+- **Tilt Animation**: Interactive 3D tilt effects on hover/interaction
+- **Shimmer Effect**: Subtle animated shine/shimmer across card surfaces
+- **Glow Effects**: Light blue glow around feature cards for enhanced contrast
+- **Implementation Notes**: Use CSS transforms, backdrop-filter, and keyframe animations
+
+### 2.3 Button Design System
+- **Liquid Glass Style**: Buttons appear to be made of clear, liquid glass
+- **Dynamic Effects**: Ripple, reflection, and refraction effects on interaction
+- **Hover States**: Smooth transitions with color shifts and depth changes
+- **Accessibility**: Maintain contrast ratios while preserving glass aesthetic
+
+### 2.4 Loading Animation
+- **Concept**: Blinking cursor typing "READY ROBOT" from left to right
+- **Typography**: Vintage/retro typewriter font (monospace, classic computing style)
+- **Colors**: Use logo color palette on black background
+- **Duration**: 2-3 second animation before main interface appears
+- **Implementation**: CSS keyframes with typewriter effect and cursor blink
+
+### 2.5 Logo Integration
+- **Background Element**: Subtle integration of logo as part of main page background
+- **Opacity**: Low opacity (10-15%) to avoid overwhelming content
+- **Positioning**: Centered or bottom-right corner placement
+- **Responsiveness**: Scale appropriately across different screen sizes
+
+### 2.6 Agents Page Modernization
+- **Layout**: Modern grid-based design with card components
+- **Styling**: Consistent with overall glass/metallic theme
+- **Interactions**: Smooth animations and transitions
+- **Typography**: Silver metallic headings with improved hierarchy
+- **Visual Hierarchy**: Clear distinction between agent categories and individual agents
+
 ## 1. Product Overview and Goals
-The Agentic Browser Automation Platform is a modular desktop browser built on Chromium/Electron that embeds a multi-model AI assistant and agentic automation engine. It enables users and developers to compose, run, and share automated browsing workflows that combine deterministic steps with reasoning-driven actions.
+
+Ready Robot is a modular desktop browser built on Chromium/Electron that embeds a multi-model AI assistant and agentic automation engine. It enables users and developers to compose, run, and share automated browsing workflows that combine deterministic steps with reasoning-driven actions.
+
 ### Primary Design Goal: Extreme Ease of Use
 This platform prioritizes **extreme ease-of-use** above all else. Every interaction, from basic browsing to advanced agent creation, must be intuitive for beginners while remaining powerful for experts. The interface should eliminate technical barriers and make AI automation accessible to non-technical users through visual, template-driven workflows.
+
 ### Goals
 - Deliver a reliable Electron-based browser with modern navigation and isolation primitives
 - Provide an integrated, multi-model AI assistant for reasoning, extraction, and action planning
@@ -13,146 +80,180 @@ This platform prioritizes **extreme ease-of-use** above all else. Every interact
 - Ensure strong security via sandboxing, permissions, an API key vault, and auditability
 - Build a sustainable ecosystem with a sandbox for testing and monetization options
 - **Prioritize GraphRAG tool simplicity** for knowledge management workflows
+
 ### Non-Goals (MVP)
 - Full mobile clients (focus on desktop: macOS, Windows, Linux)
 - Server-side hosted browser farms (local-first with optional remote runners later)
 - Custom development of workflow engines, graph databases, or visualization frameworks (leveraging open-source solutions instead)
 
-## 2. Integrated Web Search Capabilities
-### 2.1 Browser as Search Tool
+## 3. Implementation Requirements
+
+### 3.1 Frontend Implementation
+- **CSS Framework**: Modern CSS with CSS Grid, Flexbox, and custom properties
+- **Animations**: CSS transitions, transforms, and keyframe animations
+- **Glass Effects**: backdrop-filter, box-shadow, and gradient overlays
+- **Responsive Design**: Fluid layouts that maintain glass aesthetic across screen sizes
+
+### 3.2 Color Palette Specifications
+```css
+:root {
+  --primary-bg: #0A0E1A;
+  --secondary-bg: #111827;
+  --accent-blue: #3B82F6;
+  --glow-blue: #60A5FA;
+  --metallic-silver: #E5E7EB;
+  --glass-white: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+```
+
+### 3.3 Typography System
+```css
+.heading-metallic {
+  color: var(--metallic-silver);
+  text-shadow: 0 0 10px rgba(229, 231, 235, 0.5);
+  font-family: 'Logo-Font', sans-serif;
+}
+
+.typewriter-font {
+  font-family: 'Courier New', 'Monaco', monospace;
+  font-weight: 400;
+}
+```
+
+## 4. Integrated Web Search Capabilities
+
+### 4.1 Browser as Search Tool
 The browser acts as an integrated web search tool, eliminating the need for separate search utilities:
-- **Embedded Search Nodes**: Workflow steps can invoke web searches directly within the browser context
-- **Smart Search Integration**: Address bar includes intelligent search suggestions and quick actions
-- **Search Result Processing**: Built-in capabilities to extract, analyze, and act on search results
-- **Multi-Engine Support**: Integrate multiple search engines (Google, Bing, DuckDuckGo, etc.) through unified interface
-- **Context-Aware Search**: AI assistant can perform searches based on current page context and user intent
-### 2.2 Search Workflow Integration
-- **Search-to-Action Pipelines**: Convert search results directly into actionable workflow steps
-- **Result Filtering**: Advanced filtering and ranking of search results based on user-defined criteria
-- **Batch Search Operations**: Perform multiple related searches and aggregate results
-- **Search History & Analytics**: Track and analyze search patterns for workflow optimization
 
-## 3. UI/UX Requirements for Maximum Usability
-### 3.1 Core UX Principles
-#### Extreme Simplicity
-- **Zero Learning Curve**: New users should accomplish basic tasks within 30 seconds
-- **Progressive Disclosure**: Advanced features remain hidden until needed
-- **Plain Language Interface**: All UI text uses conversational, non-technical language
-- **Visual Feedback**: Immediate visual confirmation for all user actions
-#### Template-First Approach
+- **Unified Search Bar**: Combines address bar, search, and command input
+- **Search Node Integration**: Direct integration with workflow nodes for search operations
+- **Multi-Engine Support**: Google, Bing, DuckDuckGo with smart routing
+- **Search Result Processing**: AI-powered extraction and summarization of search results
+- **Context Awareness**: Search suggestions based on current workflow and page content
 
----
+### 4.2 Search Integration Architecture
+- **Search API Layer**: Abstracted search interface supporting multiple providers
+- **Result Caching**: Intelligent caching of search results for workflow reuse
+- **Search Analytics**: Track search patterns to improve workflow suggestions
+- **Privacy Controls**: User-configurable search privacy and data retention settings
 
-## 4. Tiered Agent and Feature Architecture
-This section defines product tiers, agent menu structure, feature gates, API key policies, GraphRAG availability, and monetization/upsell logic for engineering and business alignment.
+## 5. Technical Architecture
 
-### 4.1 Tiers Overview
-- Free (Starter):
-  - Local-first, privacy-preserving defaults. No bundled paid LLM usage by us.
-  - Core browser automation, basic templates, limited runs/day, community support.
-  - Models: local-only (LLM, rerankers, OCR) via user-installed backends (Ollama/LM Studio) and free third-party APIs the user supplies.
-- Pro (Individual/Team):
-  - Adds cloud “smart/AI” mode with usage-based metering, higher run limits, priority execution.
-  - Advanced templates, scheduling, background agents, GraphRAG sync, API credits wallet.
-  - Admin controls for key vault, policy, and audit logs (single user or small team).
-- Custom (Enterprise):
-  - SSO/SAML, SCIM, policy engine, private model routing, VPC connectors, on-prem runners.
-  - Unlimited scale by contract, custom SLAs, dedicated support, invoice billing.
+### 5.1 Electron Framework
+- **Main Process**: Core browser engine, security policies, and system integration
+- **Renderer Process**: UI components, workflow editor, and user interactions
+- **Preload Scripts**: Secure communication bridge between main and renderer processes
+- **Process Isolation**: Separate processes for security and stability
 
-### 4.2 Agent Menu and Toggles
-- Prebuilt Agent Menu (examples):
-  - Researcher, Web Scraper, Form Filler, Lead Finder, Outreach, Meeting Notes, QA Tester, Price Tracker, Data Extractor, Recruiter Sourcing, Competitor Monitor, Support Triage.
-- Per-Agent Mode Toggle:
-  - Local-only: executes with on-device models/tools only; no network calls to paid LLMs. Strict offline mode supported where feasible.
-  - Smart/AI: enables cloud model routing, tool augmentation (web search, vision, code), and retrieval. Can fall back to local when quota exhausted (configurable).
-- Defaults by Tier:
-  - Free: default Local-only (Smart disabled by default; user can enable if they add keys).
-  - Pro: default Smart/AI with metered billing; Local-only available as a privacy mode.
-  - Custom: policy-controlled default; org admins can lock mode per agent.
+### 5.2 AI Integration
+- **Multi-Model Support**: OpenAI GPT, Anthropic Claude, Google Gemini, local models
+- **Model Router**: Intelligent routing based on task requirements and user preferences
+- **Context Management**: Efficient context handling for long conversations and workflows
+- **API Key Management**: Secure storage and rotation of API credentials
 
-### 4.3 Feature Gating Matrix (examples; enforce via flags and server checks)
-- Core execution: Free (basic), Pro (priority + concurrency 3), Custom (priority + configurable concurrency, remote runners).
-- Workflow builder: Free (basic), Pro (advanced nodes, schedulers), Custom (custom nodes, governance).
-- Templates: Free (starter set), Pro (full catalog + premium), Custom (org templates + private catalog).
-- GraphRAG: Free (local index only, size cap), Pro (cloud sync + multi-index + embeddings store), Custom (bring-your-own graph DB, VPC connectors).
-- Model routing: Free (local + user-provided free APIs), Pro (managed model router + usage policies), Custom (private endpoints + fine-tuned models).
-- API key vault: Free (local encrypted vault), Pro (cloud sync + rotation + scopes), Custom (HSM/KMS integration, scoped sharing).
-- Data limits: Free (N pages/run, M runs/day), Pro (higher limits), Custom (contracted).
-- Collaboration: Free (export/import), Pro (team share, roles), Custom (SSO, audit, DLP).
-- Support: Free (community), Pro (email/chat SLA), Custom (dedicated CSM).
+### 5.3 Workflow Engine
+- **Visual Builder**: Drag-and-drop interface powered by React Flow or similar
+- **Node System**: Extensible node architecture for different action types
+- **Execution Engine**: Reliable workflow execution with error handling and retries
+- **State Management**: Persistent workflow state and variable management
 
-### 4.4 API Key Usage Policies
-- Storage:
-  - Free: keys stored locally, encrypted at rest; never uploaded by default.
-  - Pro: optional cloud sync to encrypted vault; device-bound secrets; rotation prompts.
-  - Custom: enterprise KMS/HSM support; role-based access; just-in-time decryption.
-- Scope and Least Privilege:
-  - Keys scoped per agent/workflow; deny wildcard scopes by default; approval prompts for escalations.
-- Execution Rules:
-  - Local-only mode must hard-block outbound calls to paid endpoints unless explicitly allowed per run.
-  - Smart/AI mode uses org/model router with guardrails: rate limits, budget caps, per-agent quotas.
-- Observability and Audit:
-  - Per-call logs include model, tokens, cost, latency, tool usage; exportable.
-  - Redaction of sensitive fields in logs by default.
+## 6. Security and Privacy
 
-### 4.5 GraphRAG Availability by Plan
-- Free:
-  - Local-only graph indexing of user-specified folders/files; size cap; single workspace.
-  - Basic retrieval in agents; no cross-workspace joins.
-- Pro:
-  - Cloud-synced embeddings/graph store; multi-workspace, scheduled refresh; semantic joins across sources.
-  - Visualization enhancements; query templates; cost-aware retrieval planning.
-- Custom:
-  - BYO graph DB (Neo4j/Azure Cosmo/Neptune) and private vector stores; VPC peering.
-  - Policy-based PII handling; field-level access controls; audit exports.
+### 6.1 Sandboxing
+- **Process Isolation**: Each workflow runs in isolated context
+- **Permission System**: Granular permissions for different operations
+- **Network Policies**: Configurable network access controls
+- **File System Access**: Limited and controlled file system interactions
 
-### 4.6 Monetization and Upsell Logic
-- Pricing Levers:
-  - Pro subscription (monthly/annual) includes monthly AI credits; overage billed pay-as-you-go.
-  - Add-ons: advanced templates pack, team seats, higher concurrency, managed GraphRAG capacity.
-- In-product Upsell:
-  - Contextual modals when a gated feature is invoked; show benefit, limits, and clear pricing.
-  - Soft wall for Free: allow limited trial of Smart/AI per week before requiring Pro.
-  - Hard wall for GraphRAG cloud sync from Free; prompt to upgrade or stay local.
-- Cost Controls:
-  - Per-agent budgets, run-level cost estimates, and auto-pause on threshold.
-  - Usage digest emails; admin-level monthly budget caps and alerts.
+### 6.2 Data Protection
+- **Local-First**: Core functionality works without cloud dependencies
+- **Encryption**: End-to-end encryption for sensitive workflow data
+- **API Key Vault**: Secure storage of API credentials with encryption
+- **Audit Logging**: Comprehensive logging of user actions and system events
 
-### 4.7 Rationale and Alignment
-- Ease-of-use: simple tier defaults and a per-agent Local/Smart toggle minimize setup complexity.
-- Cost control: strict local-only paths for Free, budgets/quotas for Pro/Custom, and auditability.
-- Scalability: feature flags and server checks enable progressive unlock from individual to enterprise.
-- PRD alignment: honors visual builder/templates focus, GraphRAG simplicity-first, and local-first posture with optional smart augmentation.
+## 7. User Experience Design
 
-### 4.8 Engineering Notes
-- Implement feature flags in renderer and main process; server verifies entitlements for cloud calls.
-- Central capability registry powering UI gating, node availability, and error messaging.
-- Mode toggle propagates to planner, tool router, and network policy layer.
-- Add tests for: gating, budget enforcement, local-only blocking, and fallback behavior.
+### 7.1 Onboarding Flow
+- **Welcome Screen**: Animated logo introduction with typewriter effect
+- **Template Gallery**: Curated selection of starter workflows
+- **Interactive Tutorial**: Hands-on tutorial building first automation
+- **Setup Wizard**: Guided configuration of AI models and preferences
 
-### 4.9 Business Notes
-- Define SKUs: Free, Pro (Solo/Team), Custom (Enterprise) with seat-based pricing for team tiers.
-- Publish clear fair-use limits; communicate with in-app meters and preflight cost estimates.
-- Offer 14-day Pro trial with limited AI credits to showcase Smart/AI benefits.
+### 7.2 Main Interface
+- **Dashboard**: Overview of recent workflows, templates, and system status
+- **Workflow Editor**: Visual canvas for building and editing automations
+- **Browser View**: Integrated browser with automation overlay
+- **Agent Management**: Centralized management of AI agents and configurations
 
----
+### 7.3 Template System
+- **Category Organization**: Templates organized by use case and complexity
+- **Search and Filtering**: Advanced search with tags and metadata
+- **Customization Options**: Easy modification of template parameters
+- **Community Sharing**: Platform for sharing and discovering workflows
 
-### Roadmap Milestones
-- Security Implementation: Process isolation and sandboxing
-- Cytoscape.js Setup: Implement basic graph visualization components
-- AI Router: Add multi-model AI support with context tools
-- Milestone 2 — Workflow Builder (Weeks 7-9): n8n editor, custom nodes, LangGraph bridge, live viz, template gallery, palette
-- Milestone 3 — Advanced Features (Weeks 10-12): Neo4j integration (optional), analytics, advanced AI, hardening, GraphRAG simplification, modal builder
-- Milestone 4 — Marketplace (Weeks 13-14): community workflows, templates, sharing, versioning, customization, onboarding
-- Milestone 5 — Polish & Release (Weeks 15-16): UI polish, performance, docs, testing, agent management
+## 8. Monetization and Business Model
 
-### Release Criteria and Metrics
-- Usability testing: 90% of new users can create basic automation within 5 minutes
-- Template coverage: 50+ high-quality templates covering major use cases
-- Integration success: LangGraph (multi-step agents), n8n (10+ browser nodes), Cytoscape.js (100+ nodes), Neo4j (efficient relationships)
-- Stability and security: No P0 issues; regression suite; performance targets met
-- Adoption and usability: 95% task completion; 80% create at least one workflow in week one
+### 8.1 Tier Structure
+- **Free Tier**: Basic browser functionality and limited AI usage
+- **Pro Tier**: Advanced features, higher AI limits, premium templates
+- **Team Tier**: Collaboration features, shared workflows, team management
+- **Enterprise Tier**: Custom integrations, advanced security, dedicated support
+
+### 8.2 Feature Gating
+- **AI Usage Limits**: Credit-based system for AI model usage
+- **Advanced Nodes**: Premium workflow nodes for complex operations
+- **Template Access**: Exclusive access to premium template library
+- **Storage Limits**: Tiered storage for workflows and data
+
+## 9. Development Roadmap
+
+### Phase 1: Foundation (Weeks 1-4)
+- Electron application setup and basic browser functionality
+- Implementation of Ready Robot branding and dark theme
+- Basic UI components with glassmorphism effects
+- Loading animation and logo integration
+
+### Phase 2: Core Features (Weeks 5-8)
+- AI integration and multi-model support
+- Basic workflow editor with visual nodes
+- Template system foundation
+- Security and sandboxing implementation
+
+### Phase 3: Advanced Features (Weeks 9-12)
+- Advanced workflow nodes and automation capabilities
+- Community features and template sharing
+- Performance optimization and testing
+- Documentation and user guides
+
+### Phase 4: Polish and Launch (Weeks 13-16)
+- UI/UX refinements and accessibility improvements
+- Beta testing and feedback integration
+- Final security audit and penetration testing
+- Launch preparation and marketing materials
+
+## 10. Success Metrics
+
+### 10.1 User Adoption
+- **Onboarding Success**: 90% of users complete initial setup
+- **Template Usage**: 80% of new users use at least one template in first week
+- **Workflow Creation**: 70% of users create custom workflow within first month
+- **Retention**: 60% monthly active user retention after 3 months
+
+### 10.2 Technical Performance
+- **Load Time**: Application starts within 3 seconds
+- **Workflow Execution**: 95% success rate for workflow executions
+- **Search Integration**: Sub-second search response times
+- **Stability**: Less than 1% crash rate in production
+
+### 10.3 Business Metrics
+- **Conversion Rate**: 15% free-to-paid conversion within 3 months
+- **Template Engagement**: Average 5+ template downloads per user
+- **Community Growth**: 100+ community-contributed templates within 6 months
+- **Enterprise Adoption**: 10+ enterprise customers within first year
 
 ---
 
-**Commit message: Add tiered agent/feature architecture: tiers, agent toggles, gating, API key policy, GraphRAG plan availability, monetization/upsell, rationale, and engineering/business notes.**
+**Implementation Priority**: Focus on core branding implementation, dark theme with glassmorphism effects, and loading animation as immediate next steps. The visual identity of Ready Robot should be established before advancing to complex workflow features.
+
+**Commit Message**: Rebrand to Ready Robot with comprehensive UI/UX specifications: dark theme, glassmorphism, liquid glass buttons, metallic typography, typewriter loading animation, logo integration, and alternative naming suggestions.
