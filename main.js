@@ -31,25 +31,19 @@ function createWindow() {
 
 app.on('ready', createWindow);
 
-// MILESTONE: Refactored shutdown logic to keep app running
-// Instead of quitting when all windows are closed, we keep the app alive
-// and create a new window to maintain the browser experience
+// MILESTONE: Fixed window closing logic for standard Electron behavior
+// Updated shutdown logic to follow Electron best practices:
+// - On macOS, apps stay active until user explicitly quits (Cmd+Q)
+// - On Windows/Linux, app quits when all windows are closed
 app.on('window-all-closed', function () {
-  // Keep the Electron app running on all platforms (including non-macOS)
-  // This prevents the app from quitting when the last window is closed
-  // Instead, recreate a window to show a welcome/blank state
-  
-  // TODO: Implement tab recovery mechanism to restore previous session
-  // TODO: Add user preference for shutdown behavior (minimize vs. blank window)
-  // TODO: Consider implementing a system tray icon for minimized state
-  
-  // Create a new window instead of quitting
-  if (mainWindow === null) {
-    createWindow();
+  // On macOS it's common for applications to stay open until the user quits explicitly with Cmd + Q
+  if (process.platform !== 'darwin') {
+    app.quit();
   }
 });
 
 app.on('activate', function () {
+  // On macOS, re-create a window when the dock icon is clicked and there are no other windows open
   if (mainWindow === null) {
     createWindow();
   }
