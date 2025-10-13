@@ -1,0 +1,440 @@
+/**
+ * Agent Menu CSS - Milestone 2
+ * Styling for the agent menu UI with tier-based visual feedback
+ */
+
+/* Main Agent Menu Container */
+.agent-menu {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+/* Header */
+.agent-menu-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.agent-menu-header h2 {
+  font-size: 32px;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.agent-menu-subtitle {
+  color: #666;
+  font-size: 16px;
+}
+
+/* Agent Grid */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.agent-card {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.agent-card:hover {
+  border-color: #4a90e2;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+  transform: translateY(-2px);
+}
+
+.agent-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.agent-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.agent-description {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.agent-select-btn {
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  width: 100%;
+}
+
+.agent-select-btn:hover {
+  background: #357abd;
+}
+
+/* Configuration Panel */
+.agent-config-panel {
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 32px;
+  margin-top: 32px;
+}
+
+.agent-config-panel h3 {
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: #1a1a1a;
+}
+
+.config-section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.config-section:last-child {
+  border-bottom: none;
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.toggle-label {
+  flex: 1;
+}
+
+.toggle-title {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.toggle-subtitle {
+  display: block;
+  font-size: 14px;
+  color: #666;
+}
+
+/* Toggle Switch */
+.toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-wrapper.locked {
+  opacity: 0.6;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #4a90e2;
+}
+
+input:disabled + .slider {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.lock-icon {
+  font-size: 20px;
+}
+
+/* Upsell Message */
+.upsell-message {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 16px;
+}
+
+.upsell-content {
+  color: #fff;
+}
+
+.upsell-text {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.upgrade-btn {
+  background: #fff;
+  color: #667eea;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upgrade-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Model Provider Selection */
+.provider-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.provider-option {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.provider-option:hover {
+  border-color: #4a90e2;
+}
+
+.provider-option input[type="radio"] {
+  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.provider-option input[type="radio"]:checked {
+  accent-color: #4a90e2;
+}
+
+.provider-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.provider-label strong {
+  font-size: 16px;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.provider-desc {
+  font-size: 14px;
+  color: #666;
+}
+
+/* API Key Section */
+.api-key-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #fff;
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+}
+
+.api-key-section h5 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.api-key-note {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.api-key-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.api-key-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.save-key-btn {
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.save-key-btn:hover {
+  background: #357abd;
+}
+
+.api-routing-note {
+  margin-top: 16px;
+  padding: 12px;
+  background: #e8f4fd;
+  border-left: 4px solid #4a90e2;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
+/* Action Buttons */
+.config-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.action-btn {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn.secondary {
+  background: #fff;
+  color: #666;
+  border: 2px solid #e0e0e0;
+}
+
+.action-btn.secondary:hover {
+  background: #f8f9fa;
+  border-color: #bbb;
+}
+
+.action-btn.primary {
+  background: #4caf50;
+  color: #fff;
+}
+
+.action-btn.primary:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+/* Debug Info */
+.debug-info {
+  margin-top: 32px;
+  padding: 24px;
+  background: #1e1e1e;
+  border-radius: 12px;
+  color: #fff;
+}
+
+.debug-info h4 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #4a90e2;
+}
+
+#debugContent {
+  background: #2d2d2d;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #a9b7c6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .agent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .config-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .config-actions {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+}
