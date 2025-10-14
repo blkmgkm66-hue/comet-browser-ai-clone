@@ -1,161 +1,179 @@
 # Ready Robot — Product Requirements Document (PRD)
 
-## 10. Open-Source Resources, Custom Builds, and Integration Architecture (Browser + AI Assistant + Agent Builder + RAG)
+Version: 1.0
+Owner: Ready Robot Core Team
+Last Updated: 2025-10-14
 
-This section enumerates required open-source components, what we must custom-build, and a concrete integration plan that ties together: the browser shell, AI assistant, drag-and-drop agent builder (node graph), visualization, and Retrieval-Augmented Generation (RAG). It also specifies UI behaviors for a modal agent-builder workspace, an agent dropdown/selector, palette, and the distinction between local (no external APIs) vs API-enabled agents. Finally, it defines how the AI assistant gains full programmatic access to both the browser and the agent builder to automate construction and execution of workflows.
+## 1. Product Summary
+Ready Robot is a desktop browser with an integrated AI assistant and an extensible agent system. The product blends traditional browsing with automation: users can chat with the assistant, run purpose-built agents (local and API-based), and visually compose workflows via a node-graph builder with RAG.
 
-### 10.1 Open-Source Resources and Libraries
+Goals:
+- Deliver a fast, minimal Electron-based browser UI with three key surfaces: left navigation, main content, right assistant panel.
+- Provide a bottom agent catalog and management system.
+- Ship a visual workflow builder for composing multi-step automations.
+- Support both local (offline-capable) and API-enabled agents.
+- Include a robust RAG stack for knowledge tasks.
 
-- Application Shell / Framework
-  - Electron (desktop shell) or Tauri (Rust core, smaller footprint) for cross-platform desktop.
-  - Vite + React (UI runtime) or SvelteKit (lighter) for renderer front-end.
-  - State: Redux Toolkit, Zustand, or Recoil for app/agent graph state.
-- UI Components and Styling
-  - Tailwind CSS + headless UI for accessible primitives (Dialog, Menu, Listbox) used in modals/dropdowns.
-  - Radix UI primitives for accessible, composable components (Popover, Tabs, DropdownMenu) used in builder palette/inspector.
-  - Framer Motion or Motion One for transitions and drag/hover animations.
-- Graph/Node Editor (Agent Builder Visualization)
-  - React Flow or Rete.js for node-based graph editor, edges, minimap, zoom/pan, connection validation, custom node renderers.
-  - Dagre or Elk.js for auto-layout of DAGs.
-- Workflow Runtime / Orchestration
-  - n8n (reference) and/or LangChain Expression Language (LCEL) concepts; we will borrow patterns, not embed the server.
-  - Temporal (optional, later) for durable, resumable workflows.
-- LLM / Tooling / Agents
-  - OpenAI/Anthropic SDKs (optional) for API agents.
-  - Open-source LLM inference: Ollama (local), llama.cpp, vLLM (server), text-generation-webui connectors.
-  - LangChainJS or LangGraphJS for tool wiring, agent executors, and RAG chains.
-  - OpenAI function calling JSON schema or Toolformer-like tool spec via JSON Schema.
-- RAG Stack
-  - Embeddings: BGE, E5, or all-MiniLM via sentence-transformers; for local: Instructor-xl, nomic-embed-text (via Ollama) when feasible.
-  - Vector DB: Qdrant (local-first), Chroma (simple local), or Weaviate (optional managed). Client libraries in JS/TS.
-  - Document loaders/parsers: LangChain document loaders; PDF parsing via pdf.js and/or unstructured.io (optional), HTML parsing via cheerio.
-  - Chunking/splitting: LangChain text splitters.
-- Browser Automation / Web Control
-  - Playwright (preferred) or Puppeteer for headless/embedded automation; use Electron/Chromium DevTools Protocol for in-app control.
-  - DOM capture: Readability.js for article extraction; Lighthouse (optional) for audits.
-- Storage / Persistence
-  - SQLite via better-sqlite3, or IndexedDB for local user data; Dexie.js if using IndexedDB.
-  - File-based project workspaces using JSON/YAML manifests for agents and graphs.
-- Security and Sandboxing
-  - Electron contextIsolation, secure IPC; DOMPurify for sanitizing HTML in previews.
-- Telemetry and Logs
-  - Pino or Winston logger; OpenTelemetry (optional) for tracing.
+Non-Goals (v1):
+- Full-fledged general-purpose web browser engine parity with Chrome/Firefox
+- Multi-user cloud collaboration (beyond local file-based projects)
 
-### 10.2 What We Must Custom-Build
+## 2. Personas and Use Cases
+- Researcher: scrapes websites, summarizes, compiles PDFs.
+- Operations Specialist: fills forms, schedules posts, syncs data.
+- Analyst: builds workflows combining scraping, RAG, and reporting.
+- Developer: extends with custom agents and shares with team.
 
-- Agent Model and Manifest
-  - Unified Agent schema (JSON) describing: id, name, type (local vs API), inputs/outputs, tools, credentials requirements, and UI affordances.
-  - Agent capability interface for tool registration (browser tools, file tools, RAG tools) and permission prompts.
-- Graph Node Library
-  - Custom node types: Input, Output, Branch/Condition, LLM Call, Tool Call, Browser Action (Navigate/Click/Fill/Wait/Screenshot), Scrape/Extract, Data Transform, RAG Retrieve, RAG Index, Loop/Map, Error Handler, Subgraph/Composite Agent, Trigger nodes.
-  - Node inspectors (right panel) with schema-driven property editors (JSON Schema -> form renderers with Zod validation).
-- Workflow Engine (in-app)
-  - Lightweight, in-process executor that walks the directed acyclic graph (DAG), supports async steps, retries, timeouts, cancellation, and variable/context passing.
-  - Deterministic execution logs, step snapshots, and replay; hooks for tool calls and rate limiting.
-- Modal Agent Builder Workspace
-  - Fullscreen modal with: canvas (React Flow/Rete), left palette, top toolbar, right inspector/logs, bottom console/run output.
-  - Import/export agents as JSON; versioning; diff view between versions.
-- AI Assistant Control Layer
-  - Tool-using assistant that can: create/edit nodes, wire edges, set properties, run the workflow, and open browser contexts—via internal tool APIs.
-  - Guardrails: confirmation prompts for destructive changes; dry-run and plan preview.
-- Agent Catalog and Dropdown Selector
-  - Bottom bar segmented list (Local vs API), plus global dropdown in header to switch active agent.
-  - Badges for API usage, cost estimate, and permission state.
-- Credentials and Secrets Vault
-  - Local encrypted storage for API keys; granular scoping to agents/workspaces; runtime injection via environment bindings.
-- RAG Pipelines
-  - Background indexer for user-selected sources (files, URLs, notes). Chunking, embedding, metadata tagging, versioned indexes.
-  - Query pipeline nodes: retrieve->rerank(optional)->compose context->LLM call.
-- Browser Control Tools
-  - Safe wrappers for Playwright/CDP exposed as graph tools and assistant-callable functions: open, goto, click, type, select, wait, scrape, extract, download, upload.
+## 3. System Architecture (High Level)
+- Electron shell: main process, renderer, secure IPC, contextIsolation.
+- Renderer UI: Vanilla TS + Web Components (or lightweight React), Tailwind CSS.
+- Agent Runtime: Node.js worker threads + sandboxed tools.
+- AI Layer: Provider adapters (OpenAI, Anthropic, local via Ollama).
+- RAG: Local vector DB (Qdrant/Chroma), pluggable embeddings, document loaders.
+- Storage: SQLite (better-sqlite3) and JSON project manifests.
 
-### 10.3 Integration Architecture and Data Flows
+## 4. Phased Delivery Plan (12 Weeks)
 
-- High-Level Modules
-  - UI Shell: Navigation, bottom agent catalog, right assistant panel, modal builder.
-  - Agent Core: Agent registry, graph store, workflow executor, tool registry, credentials vault.
-  - RAG Service: Indexers, vector DB client, retriever, embeddings provider abstraction.
-  - Browser Control: Embedded Chromium context + automation API.
-- Data Contracts
-  - Agent manifest JSON; Graph JSON (nodes, edges, metadata); Run record JSON (inputs, outputs, logs); Tool spec JSON Schema.
-  - Credential reference tokens (never store raw keys in graph); runtime injection.
-- Execution Path
-  1) User selects agent from dropdown or bottom catalog.
-  2) If prebuilt: manifest loads graph; if custom: open modal builder.
-  3) Assistant can propose a plan, generate or modify the graph (tool calls), and request confirmation.
-  4) On run: executor instantiates tools (browser, RAG, LLM), validates inputs, executes nodes, streams logs to UI.
-  5) Outputs are collected and shown in assistant panel and run console; users can save as new version or export.
-- Permissions and Safety
-  - Capability prompts when an agent first requests browser control, file access, or external APIs; remember decisions per agent.
-  - Sandboxed execution contexts; network egress toggles for local-only mode.
+Each week defines outcomes, acceptance criteria (AC), and testing steps (TS). Libraries (Libs) and Custom Build (CB) callouts specify technology choices and bespoke work.
 
-### 10.4 UI/UX Specifications
+### Phase 1: Foundation (Weeks 1-2)
 
-- Agent Dropdown Selector
-  - Single selector in header: categories (Local, API); search; favorites; recent.
-  - Each item shows: name, icon, type badge (Local/API), short description, permissions state.
-- Modal Agent Builder
-  - Opens centered, fullscreen (esc or Close returns to prior view). Restores last canvas view and unsaved changes detection.
-  - Layout:
-    - Left: Palette with groups (Core, Control Flow, Browser, Data, LLM, RAG, Integrations, Utilities).
-    - Center: Canvas with grid, pan/zoom, snap-to-grid, auto-layout option, selection marquee, mini-map.
-    - Right: Inspector with property forms, variable bindings, validation messages; tabs for Node, Run Logs, Schema.
-    - Top: Toolbar (Run, Stop, Save, Version, Auto-Layout, Validate, Zoom, Share, Export JSON).
-    - Bottom: Console with streaming logs, token/cost meter for API runs, and warnings.
-- Local vs API Agents
-  - Local agents: only local tools (browser, filesystem, local LLM via Ollama); no external network by default.
-  - API agents: can declare external providers (OpenAI, Anthropic, search APIs, Slack, etc.); per-provider credentials required.
-  - Mixed mode allowed if user enables network egress for a local agent.
-- Palette and Node Config
-  - Drag from palette to canvas; drop opens quick-config; edges only connect compatible ports (type-checked).
-  - Validation shows inline errors; “Validate” compiles the graph schema and reports missing fields.
+Week 1: App Skeleton & Tooling
+- Outcomes: Electron app boots, HMR dev, TS strict, lint/test harness.
+- Libs: electron, vite, typescript, eslint, prettier, jest, playwright, electron-builder.
+- CB: App menu, window controller, secure IPC scaffold.
+- AC: App launches; dev reload works; lint/test pass; no TS errors.
+- TS: E2E launch test (Playwright); unit tests for IPC guards; lint CI.
 
-### 10.5 Assistant Access to Builder and Browser
+Week 2: Layout & Modal System
+- Outcomes: Three-panel layout; resizable splitters; modal component system.
+- Libs: tailwindcss, radix-ui, motion (framer-motion or motion-one).
+- CB: Splitter component; focus trap; z-index manager; animation queue.
+- AC: Panels resize; modal stacking; keyboard accessibility.
+- TS: Visual regression for layout; a11y checks (axe); keyboard nav tests.
 
-- Assistant Tooling
-  - Expose first-class tool methods: create_node, connect, set_prop, delete_node, run_workflow, open_modal_builder, select_agent, open_url, click, fill, wait, extract, index_docs, query_rag.
-  - All assistant actions go through capability checks and are logged with an undo stack.
-- Autonomous Build Flow (opt-in)
-  - User: “Create a scraper that visits X, extracts Y, and saves CSV.”
-  - Assistant: Drafts plan -> builds nodes/edges -> validates -> asks confirm -> runs test -> presents results -> offers save as prebuilt agent.
-- Collaboration
-  - Live co-edit mode where the assistant’s edits are highlighted; user can accept/reject changes.
+### Phase 2: Navigation, Catalog, Assistant (Weeks 3-4)
 
-### 10.6 RAG Design
+Week 3: Left Navigation & Routing
+- Outcomes: Collapsible nav; routes (Home, History, Bookmarks, Settings); search.
+- Libs: fuse.js, lucide icons.
+- CB: Lightweight router; breadcrumb component; stateful nav.
+- AC: Route transitions <200ms; fuzzy search returns ranked results.
+- TS: Route E2E; search unit tests; performance budget checks.
 
-- Indexing
-  - Sources: local files, URLs, clipboard, notes. MIME-aware loaders. Chunking by token length with overlap. Metadata: source, author, timestamp, tags.
-  - Embeddings backend is pluggable: local (Ollama/nomic) or API (OpenAI, Cohere). Batch jobs with progress UI.
-- Retrieval
-  - Vector search top-k with score threshold; optional rerank (Cohere Rerank or local Cross-Encoder) when enabled.
-  - Context assembly: citation snippets with token budgeting; deduplication; safety filters.
-- Graph Nodes
-  - RAG Index node (build/update), RAG Retrieve node (query), RAG Compose node (format prompt/context), RAG Answer node (LLM call).
-- Caching
-  - Per-graph cache of retrieval results and LLM responses; invalidation on data changes.
+Week 4: Bottom Catalog & Assistant Chat
+- Outcomes: Horizontal agent catalog; drag reorder; assistant chat UI.
+- Libs: embla-carousel, react-markdown, prismjs, date-fns.
+- CB: Agent registry; agent state indicators; chat message list with streaming.
+- AC: Agents install/remove; chat streams; copy/retry actions work.
+- TS: Catalog interactions E2E; message streaming tests; snapshot tests.
 
-### 10.7 Persistence, Projects, and Versioning
+### Phase 3: Local Agents (Weeks 5-6)
 
-- Project Workspaces
-  - Each project contains agents, graphs, credentials references, and indexes. Stored under a workspace folder.
-- Version Control
-  - Semantic versioning for agents; diff view of graphs; rollback.
-- Import/Export
-  - JSON export for agents and graphs; bundle with assets; signed manifests (optional) for marketplace.
+Week 5: Web Scraper, Form Filler, Screenshot
+- Outcomes: Scraper with CSS/XPath; Form Filler with type inference; Screenshot tool.
+- Libs: cheerio, puppeteer/playwright, csv-writer, sharp.
+- CB: Form detection/mapping; screenshot annotations; job queue.
+- AC: Extract fields from 5 target sites; fill common forms >90% correctly; capture full/element screenshots.
+- TS: Scrape fixtures; form mapping tests; image diff for screenshots.
 
-### 10.8 Security, Privacy, and Offline Mode
+Week 6: PDF, File Manager, Macro/Workflow MVP
+- Outcomes: PDF export; file organizer; macro recorder/replayer; simple workflow runner.
+- Libs: pdf-lib, node-cron, glob.
+- CB: Recorder hook; event serializer; workflow state machine.
+- AC: Generate PDFs with templates; macro replay fidelity >95%; workflow run/stop.
+- TS: PDF golden tests; macro replay E2E; workflow state unit tests.
 
-- All secrets encrypted at rest; least-privilege capability requests; per-agent network toggle.
-- Offline-first: local LLM and vector DB enable full functionality without internet when desired.
-- Audit logs for tool usage; redaction of PII in logs where possible.
+### Phase 4: API Agents (Weeks 7-8)
 
-### 10.9 Implementation Plan Summary (Milestones)
+Week 7: Communication & Research
+- Outcomes: Email agent (Gmail/Outlook); Calendar agent; Research agent.
+- Libs: googleapis, @microsoft/microsoft-graph-client, node-ical.
+- CB: OAuth2 flow UI; credential vault; rate limiter.
+- AC: Send/receive email; create events; fetch papers with citations.
+- TS: OAuth mock tests; API contract tests; rate-limit retry tests.
 
-- M1: Core shell and UI (left nav, right assistant panel, bottom catalog, modal system). Choose Electron/Tauri + React + Tailwind + Radix.
-- M2: Graph editor integration (React Flow), basic node library (Browser, LLM, Data, Control Flow), executor MVP with logs.
-- M3: Assistant tool interface wired to builder and browser; capability prompts; undo/redo; run/stop controls.
-- M4: RAG service (Qdrant/Chroma), indexing UI, retrieve/compose/answer nodes; local embeddings backend via Ollama.
-- M5: Agent catalog with Local/API distinction, credentials vault, manifest schema, import/export.
-- M6: Stability pass: validation, auto-layout, error handling, caching, tests, telemetry, and docs.
+Week 8: Business Integrations
+- Outcomes: CRM (Salesforce/HubSpot), Analytics (GA4), E-commerce (Shopify/WooCommerce), Finance agent (read-only).
+- Libs: respective SDKs; openapi-types; zod for schema validation.
+- CB: Connector abstraction; pagination helpers; error classifier.
+- AC: Pull lists/entities; create/update minimal records (sandbox); reports render.
+- TS: Integration mocks; pagination tests; error handling E2E.
 
-This section defines the complete resource map and integration approach needed to implement the Ready Robot browser with an AI assistant, agent builder, RAG, and a cohesive visualization experience.
+### Phase 5: Builder + RAG (Weeks 9-10)
+
+Week 9: Graph Builder UI and Node Library
+- Outcomes: Canvas with pan/zoom, minimap; node palette; inspectors; validation.
+- Libs: React Flow/Rete.js, elkjs/dagre; zod.
+- CB: Node renderers; port typing; schema-driven inspectors; graph serializer.
+- AC: Build sample graphs without errors; auto-layout works; validate highlights.
+- TS: Graph serialization tests; auto-layout snapshot tests; validation unit tests.
+
+Week 10: RAG Stack Integration
+- Outcomes: Indexing UI; embeddings; vector DB; retrieve/compose/answer nodes.
+- Libs: qdrant/chroma-js, sentence-transformers API bindings, pdf.js, cheerio, langchain.
+- CB: Background indexer; citation assembler; rerank toggle.
+- AC: Index 1k docs <5 min locally; accurate top-k with citations; cached retrieval.
+- TS: Indexer throughput tests; retrieval accuracy on labeled set; cache invalidation tests.
+
+### Phase 6: Performance, UX, Enterprise (Weeks 11-12)
+
+Week 11: Responsive & Performance
+- Outcomes: Mobile/tablet responsiveness; WCAG 2.1 AA; code-splitting; startup <2s.
+- Libs: @axe-core/playwright, webpack-bundle-analyzer, workbox (for caching in web views).
+- CB: Route-level lazy-loading; memory budget guardrails; profiler scripts.
+- AC: Lighthouse a11y >90; TTI <2.5s; mem footprint within target.
+- TS: A11y automated checks; performance CI; memory regression tests.
+
+Week 12: Marketplace, Sharing, Enterprise
+- Outcomes: Agent marketplace (local file manifest), sharing, versioning; SSO and team basics.
+- Libs: keytar for secrets, openid-client for OAuth/OIDC, semver.
+- CB: Signed manifests; import/export; role/permission model; audit logs.
+- AC: Install/update agents; SSO login; team roles; audit trail exports.
+- TS: Manifest signature tests; SSO flow integration tests; RBAC unit/E2E.
+
+## 5. Detailed Acceptance Criteria Matrix
+
+For every milestone M1–M6:
+- Functional: features operate as described and persist state across restarts.
+- UX: interactions complete within performance budgets; a11y compliant.
+- Reliability: graceful error handling; retries/backoff; offline mode where applicable.
+- Security: contextIsolation on; CSP enforced; secrets encrypted; least privilege.
+- Observability: logs with redaction; basic telemetry opt-in; crash reports.
+
+## 6. Testing Strategy
+- Unit: Jest + Testing Library for components, utils, agents.
+- Integration: Playwright for UI flows; API mocks; visual regression.
+- Performance: Lighthouse (embedded pages), custom timers, memory profiling.
+- Security: dependency scanning; IPC fuzz tests; permission prompt coverage.
+- Data: deterministic fixtures for scraping, RAG ground-truth set for recall/precision.
+
+## 7. Open-Source Libraries & Custom Builds
+- See weekly sections for Libs and CB. Master list:
+  - UI/UX: Tailwind, Radix UI, lucide icons, framer-motion/motion-one
+  - Graph: React Flow/Rete.js, dagre/elkjs
+  - Agents: cheerio, puppeteer/playwright, pdf-lib, sharp, node-cron
+  - AI: OpenAI/Anthropic SDKs, Ollama, langchain, sentence-transformers
+  - RAG: qdrant/chroma, pdf.js, cheerio
+  - Storage: better-sqlite3, Dexie (if IndexedDB), keytar
+  - Tooling: vite, eslint, prettier, jest, playwright, electron-builder
+
+Custom Build Highlights:
+- Splitter, Modal, Router, Agent Registry, Provider Adapters, Workflow Engine, Macro Recorder, Credential Vault, Manifest/Schema Validators, RAG Indexer.
+
+## 8. Risks & Mitigations
+- Risk: API rate limits -> Mitigation: queue + backoff + caching.
+- Risk: LLM cost overruns -> Mitigation: token/cost meter, local model options.
+- Risk: Performance regressions -> Mitigation: budgets, CI checks, profiling.
+- Risk: Security of secrets -> Mitigation: keytar, encryption, secure IPC, permissions.
+- Risk: Legal/ToS scraping -> Mitigation: robots.txt respect, rate limits, user warnings.
+
+## 9. Rollout Plan
+- Alpha (end of Week 6): Local agents usable; feedback loop.
+- Beta (end of Week 10): Builder + RAG complete; select API agents.
+- GA (end of Week 12): Marketplace and enterprise basics; documentation published.
+
+## 10. Appendix
+- Glossary of node types and agent schema examples.
+- Sample manifests and workflow JSONs.
+- Links to design tokens and component catalogs.
