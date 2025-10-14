@@ -1,10 +1,7 @@
 # Ready Robot — Product Requirements Document (PRD)
-
 ## 1. Project Branding and Identity
-
 ### Product Name: Ready Robot
 The product is officially named "Ready Robot" - a sleek, modern, futuristic browser with integrated AI automation capabilities.
-
 ### Alternative Name Suggestions
 For future consideration, alternative names that capture the robotic, automation, and futuristic themes:
 - **NexusBot Browser**
@@ -17,17 +14,14 @@ For future consideration, alternative names that capture the robotic, automation
 - **TechnoCore Browser**
 - **DroidFlow**
 - **MetaBrowser**
-
 ### Brand Rationale
 "Ready Robot" emphasizes the immediate readiness and automation capabilities while maintaining a friendly, approachable tone that makes advanced AI automation accessible to all users.
 
 ## 2. New Comet-Style Layout and UX Architecture
-
 ### 2.1 Overview
 Ready Robot has been redesigned with a modern, Comet-inspired interface that prioritizes ease of use, scalability, and a clean, minimalist aesthetic. The new architecture separates navigation, assistant functionality, and agent management into distinct, focused areas.
 
 ### 2.2 Architectural Features
-
 #### Left-Side Hide-Away Navigation Bar
 - **Collapsible sidebar** that slides in/out from the left edge
 - Contains primary navigation: Home, Agents, Settings, History, Help
@@ -56,243 +50,135 @@ Ready Robot has been redesigned with a modern, Comet-inspired interface that pri
 - Quick launch on click
 - Drag-and-drop reordering capability
 
-#### Modal Pop-Ups for Agent Configuration
-- Clicking an agent in catalog opens configuration modal
-- Modal contains:
-  - Agent details (name, description, capabilities)
-  - Configuration options (API keys, parameters, endpoints)
-  - Enable/disable toggle
-  - Save/Cancel actions
-- Backdrop overlay (semi-transparent black, 0.6 opacity)
-- Close on backdrop click or ESC key
-- Responsive sizing (90% width on mobile, max 800px on desktop)
+---
 
-### 2.3 Minimalist Design Philosophy
+## 3. Comet-Style Visual Design Specifications
+This section defines the style and layout changes required for Ready Robot to closely match the Comet browser look-and-feel. All values are design tokens and must be added to the theme system (CSS variables and/or Tailwind config).
 
-#### Clean Agent List/Grid
-- Simple card design with essential information only
-- Icon + Name + Status (no heavy decorations)
-- Consistent spacing (16px margins, 12px padding)
-- Subtle hover effects (slight elevation, border highlight)
-- Grid layout option for agent catalog (toggle between list/grid)
+### 3.1 Color Palette (Dark-first with Auto Light Variant)
+- Base Background: --bg: #0B0F14 (dark graphite-blue)
+- Surface: --surface: #0F141B; --surface-2: #121824; --surface-3: #172133
+- Elevated Glass Surface: --glass: rgba(14, 20, 27, 0.6) with backdrop-filter: blur(16px)
+- Accent Primary (Comet teal/cyan): --accent: #22D3EE; --accent-600: #06B6D4; --accent-400: #67E8F9
+- Accent Secondary (Electric purple): --accent-2: #8B5CF6; --accent-2-400: #A78BFA
+- Text Primary: --text: #E6F1FF; Text Secondary: --text-2: #A8B3C7; Muted: --text-3: #6B7280
+- Borders/Dividers: --line: rgba(255,255,255,0.08); Strong: --line-2: rgba(255,255,255,0.14)
+- Success: #10B981; Warning: #F59E0B; Danger: #EF4444; Info: #38BDF8
+- Light theme auto-mapping (prefers-color-scheme: light):
+  - --bg: #F7FAFF; --surface: #FFFFFF; --surface-2: #F3F6FB; --surface-3: #EAF0FA
+  - --glass: rgba(255,255,255,0.6) with blur(16px)
+  - --text: #0B1020; --text-2: #334155; --text-3: #64748B
+  - --line: rgba(2,6,23,0.08); --line-2: rgba(2,6,23,0.14)
+  - --accent values unchanged
 
-#### Removal of Feature Cards
-- Eliminated heavy glassmorphism feature cards from main view
-- Focus on functional interface elements
-- Content-first approach: maximize space for browser and assistant
+### 3.2 Typography
+- Family: Inter, SF Pro, or system-ui, with numeric-ops on
+- Headings: H1 24/32 semi-bold; H2 20/28 semi-bold; H3 16/24 medium
+- Body: 14/22 regular; Small: 12/18 regular; Mono for code: JetBrains Mono / ui-monospace
+- Letter-spacing: -0.01em headings; 0em body
 
-#### Reduction of Heavy Glassmorphism
-- Glassmorphism effects limited to specific elements:
-  - Modal backgrounds (subtle blur)
-  - Navigation panels (light transparency)
-- Replaced heavy glass effects with solid, clean surfaces
-- Improved readability and performance
+### 3.3 Spacing and Sizing Scale
+- 4px base scale: 4, 8, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64
+- Page gutters: 24px desktop, 16px tablet, 12px mobile
+- Component radii: xs 6px, sm 8px, md 12px, lg 16px, xl 20px (panels use lg-xl)
+- Hit targets: min 40x40px
 
-#### More Whitespace
-- Generous spacing between elements (minimum 24px sections)
-- Breathing room around content areas
-- Clear visual hierarchy through spacing
-- Reduced cognitive load
+### 3.4 Glassmorphism and Elevation
+- Apply translucent panels for floating UI (assistant panel, command palette, toasts):
+  - background: var(--glass); backdrop-filter: blur(16px) saturate(120%)
+  - border: 1px solid rgba(255,255,255,0.08)
+  - shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)
+- Non-glass surfaces (content panes) use solid --surface/--surface-2 with subtle shadow: 0 6px 20px rgba(0,0,0,0.25)
+- Active accent glow for primary elements: 0 0 0 1px var(--accent) inset, 0 0 24px rgba(34,211,238,0.25)
 
-#### Updated Branding Placement
-- Logo in top-left corner of main toolbar
-- Small, unobtrusive size (32x32px or text-based)
-- Removed background logo watermarks
-- Brand color accents on interactive elements only
+### 3.5 Panel Shadows and Dividers
+- Panel shadow tokens: --sh-panel-sm: 0 2px 8px rgba(0,0,0,0.25); --sh-panel-md: 0 8px 24px rgba(0,0,0,0.35); --sh-panel-lg: 0 16px 48px rgba(0,0,0,0.45)
+- Dividers: 1px hairline using var(--line) with 8px section padding above/below
+- Section headers use bottom border var(--line-2)
 
-### 2.4 Agent Catalog Structure
+### 3.6 Controls and States
+- Buttons: 36px height default, 44px primary; radii md; primary uses --accent gradient (to 10% darker); hover elevates to --sh-panel-sm, pressed to inset highlight
+- Inputs: 36px height, bg --surface-2, border var(--line), focus ring: 0 0 0 2px rgba(34,211,238,0.35)
+- Toggles/Chips: pill radius 9999px; selected uses accent fill with 12% opacity background
+- Status badges: success/warn/danger/info with 12% bg tint and 1px border using color-500
 
-#### Local Agents (Minimum 6)
-Agents that run locally without external API calls:
-1. **Web Scraper** - Extract data from web pages
-2. **Form Filler** - Automate form completion
-3. **Screenshot Tool** - Capture page screenshots
-4. **Data Extractor** - Parse and structure page data
-5. **Link Analyzer** - Analyze and validate links
-6. **Cookie Manager** - Manage browser cookies
+### 3.7 Motion and Animation
+- Easing: var(--ease-out) cubic-bezier(0.16, 1, 0.3, 1) for entrances; var(--ease-smooth) cubic-bezier(0.22, 1, 0.36, 1)
+- Durations: micro 120ms, fast 180ms, standard 240ms, deliberate 320ms
+- Prefer transform-based GPU animations: translateX/Y, scale, opacity; avoid layout thrash
+- Reduce motion: respect prefers-reduced-motion, cutting durations by 60% and removing parallax/glow pulses
 
-Configuration:
-- Local execution parameters
-- Selector patterns
-- Output formats
-- Scheduling options
+### 3.8 Iconography
+- Stroke-based 1.5px outline icons (Lucide/Heroicons), monotone; accent on active
+- Reserved agent glyph color slots per agent to avoid uniform cyan wall
 
-#### API Agents (Minimum 10)
-Agents that integrate with external APIs:
-1. **OpenAI GPT** - Language model integration
-2. **Claude** - Anthropic AI assistant
-3. **Perplexity Search** - Advanced web search
-4. **DALL-E** - Image generation
-5. **Stable Diffusion** - Open-source image generation
-6. **Google Search** - Web search API
-7. **Weather API** - Weather data retrieval
-8. **Translation API** - Multi-language translation
-9. **Email API** - Email sending/receiving
-10. **Calendar API** - Calendar integration
-11. **Social Media APIs** - Post to platforms
-12. **Database APIs** - Data storage and retrieval
+---
 
-Configuration:
-- API key management
-- Endpoint customization
-- Rate limiting settings
-- Response handling preferences
+## 4. Component Layout and Behaviors (Comet-Parity)
 
-#### Editable Configuration
-- All agents support configuration via modal
-- Settings persist across sessions (localStorage/file)
-- Import/export agent configurations
-- Preset templates for common use cases
+### 4.1 Left Navigation Bar
+- Width: 72px collapsed (icons only), 240px expanded (icons + labels)
+- Behavior: hover peek (desktop) expands to 240px while hovered; click pin to persist
+- Animation: translateX + width transition 240ms var(--ease-smooth); elevation --sh-panel-md; glass on expanded
+- Contents: top primary nav; bottom cluster with Settings, Help, Profile; active item has accent indicator bar (2px) and glow
+- Keyboard: Alt+1..9 jump to primary; Ctrl/Cmd+B toggles collapse
 
-### 2.5 Rationale for Changes
+### 4.2 Right Assistant Panel
+- Default width 420px (min 320, max 600); resizable with drag handle at left edge
+- Slide-in from right using 280ms var(--ease-smooth); shadow --sh-panel-lg; glass background
+- Header: title, model/agent selector, minimize, close
+- Body: messages with bubble grouping, timestamp on hover, code blocks in mono
+- Input: sticky composer with attachments, suggestions chips, and Shift+Enter newline
+- Context mode: when an agent is active, header adopts agent color slot and shows status
 
-#### Ease of Use
-- **Familiar Navigation Pattern**: Left sidebar navigation is an established pattern users recognize from VS Code, Slack, and other professional tools
-- **Contextual Access**: Assistant panel available when needed without cluttering main view
-- **Quick Agent Access**: Bottom bar provides one-click access to all agents
-- **Intuitive Configuration**: Modal-based settings are straightforward and focused
+### 4.3 Bottom Agent Catalog Bar
+- Height: 84px desktop, 72px tablet, 64px mobile
+- Layout: two segments with vertical divider; Local (left, min 6), API (right, min 10)
+- Cards: 56x56 icon circle with subtle inner shadow; label below on hover/tooltip
+- Interaction: click to quick-launch; right-click opens context menu (pin, settings, docs)
+- Scrolling: horizontal with snap; mouse wheel shift + scroll; touch swipe
+- Drag-and-drop: reorder within segment; dragging shows placeholder and ghost preview
 
-#### Scalability
-- **Expandable Agent Catalog**: Easy to add new agents without UI restructure
-- **Modular Architecture**: Each component (nav, assistant, catalog) is independent
-- **Performance**: Reduced visual effects improve rendering performance
-- **Mobile-Ready**: Collapsible panels adapt well to smaller screens
+### 4.4 Content Area
+- Uses remaining viewport; min width 320px; max content width 1440px with centered gutters
+- Breadcrumb header with page title and quick actions; sticky at 56px height
+- Panels/cards grid uses 12-column responsive grid with 24px gutters (16px tablet, 12px mobile)
 
-#### Modern Look
-- **Industry Standard**: Aligns with modern web application design patterns
-- **Professional Aesthetic**: Clean, minimalist design conveys sophistication
-- **Focus on Content**: Reduced decorative elements highlight functionality
-- **Consistency**: Unified design language across all components
+### 4.5 Header/Toolbar
+- Top bar height 56px; left area has hamburger (toggles nav), center search, right actions
+- Command palette opens with Ctrl/Cmd+K as glass panel centered width 640px
 
-#### Familiar Navigation
-- **Muscle Memory**: Users familiar with similar tools (VS Code, browsers with sidebars) adapt quickly
-- **Predictable Interactions**: Standard patterns reduce learning curve
-- **Accessibility**: Clear navigation structure benefits screen readers and keyboard navigation
+---
 
-## 3. Visual Design System (Updated)
+## 5. Mobile and Responsive Behavior
+- Breakpoints: sm 640, md 768, lg 1024, xl 1280, 2xl 1536
+- Left nav becomes off-canvas drawer on < md; swipe from left edge to open; body locks scroll when open
+- Assistant panel becomes full-screen overlay on < md with dim backdrop; close on swipe right
+- Agent bar condenses to a swipeable strip with 48px icons; segments accessible via tabs
+- Reduce shadows and blurs on low-end devices; cap blur at 8px on mobile for perf
 
-### 3.1 Dark Theme with Refined Aesthetics
-- **Primary Background**: Midnight blue (#0A0E1A, #111827)
-- **Surface Colors**: Slightly lighter blues (#1E293B, #334155) for panels
-- **Accent Colors**: Blue (#3B82F6) and cyan (#06B6D4) for interactive elements
-- **Typography**: System fonts for clarity (Inter, SF Pro, Segoe UI)
-- **Borders**: Subtle borders (1px, rgba(255,255,255,0.1)) for separation
+---
 
-### 3.2 Component-Specific Styling
+## 6. Accessibility
+- Color contrast: 4.5:1 for text; 3:1 for large text and UI controls
+- Focus visible: 2px accent ring or offset outline; never rely on color alone
+- Keyboard complete: all nav and agent actions operable via keyboard
+- Screen reader: aria-expanded, aria-current, role tabs, and live regions for assistant updates
 
-#### Navigation Bar
-- Solid background (#1E293B)
-- Icon size: 24x24px
-- Hover: Background highlight (#334155)
-- Active: Blue accent border (3px left border)
+---
 
-#### Assistant Panel
-- Semi-transparent background (rgba(30, 41, 59, 0.95))
-- Chat bubbles: User (blue), Assistant (gray)
-- Input area: Fixed bottom with button
+## 7. Implementation Notes
+- Centralize tokens in CSS variables and Tailwind theme; expose JS token map
+- Create layout shell with CSS grid: [nav][content][assistant] with grid-template-columns: auto 1fr auto
+- Use ResizeObserver for assistant panel; store sizes and collapsed state in localStorage
+- Framer Motion or CSS transitions for slide/peek; prefers-reduced-motion support
+- Virtualize long agent lists; lazy-load icons; prefetch agent manifests on idle
 
-#### Agent Catalog Bar
-- Height: 80px
-- Card size: 64x64px per agent
-- Hover: Slight scale (1.05) and shadow
-- Status indicator: Colored dot (green=active, gray=inactive, red=error)
+---
 
-#### Modals
-- Backdrop: rgba(0,0,0,0.6)
-- Modal: Solid background (#1E293B) with border
-- Shadow: Large, soft shadow for depth
-- Animation: Fade in + scale from 0.95 to 1.0
-
-### 3.3 Reduced Visual Effects
-- **Glassmorphism**: Only on modals and overlay panels, minimal blur (8px max)
-- **Animations**: Smooth but quick (200-300ms max)
-- **Shadows**: Subtle, used sparingly for depth
-- **Gradients**: Limited to accent elements (buttons, status indicators)
-
-### 3.4 Loading Animation
-- **Concept**: Blinking cursor typing "READY ROBOT" from left to right
-- **Typography**: Vintage/retro typewriter font (monospace, classic computing style)
-- **Colors**: Use logo color palette on black background
-- **Duration**: 2-3 second animation before main interface appears
-- **Implementation**: CSS keyframes with typewriter effect and cursor blink
-
-## 4. Implementation Priorities
-
-### Phase 1: Core Architecture (Weeks 1-3)
-1. **Left Navigation Bar**
-   - Implement collapsible sidebar component
-   - Add navigation items and routing
-   - State persistence (collapsed/expanded)
-   
-2. **Bottom Agent Catalog Bar**
-   - Create fixed bottom bar layout
-   - Implement local/API agent sections
-   - Add horizontal scrolling
-   - Agent card component with status
-
-3. **Right Assistant Panel**
-   - Slide-out panel component
-   - Chat interface (messages, input)
-   - Toggle button in header
-
-4. **Modal System**
-   - Reusable modal component
-   - Agent configuration form
-   - Backdrop and close handlers
-
-### Phase 2: Agent Integration (Weeks 4-6)
-1. **Local Agents**
-   - Implement minimum 6 local agents
-   - Configuration interfaces for each
-   - Local execution logic
-
-2. **API Agents**
-   - Implement minimum 10 API agents
-   - API key management system
-   - Rate limiting and error handling
-
-3. **Configuration Persistence**
-   - Save/load agent settings
-   - Import/export functionality
-   - Preset templates
-
-### Phase 3: Polish and Features (Weeks 7-9)
-1. **UI Refinements**
-   - Smooth animations
-   - Responsive design (mobile/tablet)
-   - Keyboard shortcuts
-   - Accessibility (ARIA labels, keyboard navigation)
-
-2. **Agent Management**
-   - Drag-and-drop reordering
-   - Enable/disable agents
-   - Agent search/filter
-
-3. **Assistant Enhancements**
-   - Context-aware responses
-   - Agent suggestion system
-   - Conversation history
-
-### Phase 4: Testing and Launch (Weeks 10-12)
-1. **Testing**
-   - Cross-browser testing
-   - Performance optimization
-   - User testing and feedback
-   
-2. **Documentation**
-   - User guide for new UI
-   - Agent configuration tutorials
-   - API documentation for extensions
-
-3. **Launch Preparation**
-   - Final bug fixes
-   - Marketing materials
-   - Release notes
-
-## 5. Next Development Steps
-
-### Immediate (This Week)
-1. Create wireframes for new layout
+## 8. Roadmap (Layout-first)
+### Immediate (Week 1)
+1. Tokenize colors, radii, shadows, spacing
 2. Set up component structure (navigation, assistant panel, catalog bar)
 3. Implement basic left navigation with routing
 4. Create modal component system
@@ -317,8 +203,7 @@ Configuration:
 4. Community sharing platform
 5. Enterprise features (team management, SSO)
 
-## 6. Success Metrics
-
+## 9. Success Metrics
 ### User Adoption
 - **Onboarding Success**: 90% of users successfully configure at least one agent
 - **Agent Usage**: 80% of users activate at least 3 agents in first week
@@ -338,7 +223,6 @@ Configuration:
 - **User Satisfaction**: 4.5+ star rating on feedback surveys
 
 ---
+Implementation Priority: Focus on establishing the new Comet-style architecture first (navigation bar, assistant panel, agent catalog bar) before adding complex agent logic. The new layout provides the foundation for scalable agent management and superior user experience.
 
-**Implementation Priority**: Focus on establishing the new Comet-style architecture first (navigation bar, assistant panel, agent catalog bar) before adding complex agent logic. The new layout provides the foundation for scalable agent management and superior user experience.
-
-**Commit Message**: Implement Comet-style layout with left navigation, right assistant panel, bottom agent catalog (6+ local, 10+ API agents), modal configuration system, minimalist design, and improved UX architecture.
+Commit Message: Implement Comet-style layout with left navigation, right assistant panel, bottom agent catalog (6+ local, 10+ API agents), modal configuration system, minimalist design, and improved UX architecture.
