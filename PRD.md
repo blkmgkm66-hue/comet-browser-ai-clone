@@ -1,6 +1,6 @@
 # Ready Robot — Product Requirements Document (PRD)
 
-## Project Branding and Identity
+## 1. Project Branding and Identity
 
 ### Product Name: Ready Robot
 The product is officially named "Ready Robot" - a sleek, modern, futuristic browser with integrated AI automation capabilities.
@@ -21,239 +21,324 @@ For future consideration, alternative names that capture the robotic, automation
 ### Brand Rationale
 "Ready Robot" emphasizes the immediate readiness and automation capabilities while maintaining a friendly, approachable tone that makes advanced AI automation accessible to all users.
 
-## Visual Design System and UI/UX Requirements
+## 2. New Comet-Style Layout and UX Architecture
 
-### 2.1 Dark Theme with Futuristic Aesthetics
+### 2.1 Overview
+Ready Robot has been redesigned with a modern, Comet-inspired interface that prioritizes ease of use, scalability, and a clean, minimalist aesthetic. The new architecture separates navigation, assistant functionality, and agent management into distinct, focused areas.
+
+### 2.2 Architectural Features
+
+#### Left-Side Hide-Away Navigation Bar
+- **Collapsible sidebar** that slides in/out from the left edge
+- Contains primary navigation: Home, Agents, Settings, History, Help
+- Minimalist icons with optional labels
+- Auto-collapses to maximize content space
+- Smooth slide animation (200-300ms) on toggle
+- Persists user preference (collapsed/expanded state)
+
+#### Right-Side Assistant Slide-Out Panel
+- **Assistant chat interface** that slides from right edge
+- Toggle button in header/toolbar for quick access
+- Full-height panel with dedicated chat interface
+- Context-aware: shows active agent or general assistant
+- Resizable width (minimum 320px, maximum 600px)
+- Semi-transparent overlay when open on mobile
+- Independent scroll area for conversation history
+
+#### Bottom Agent Catalog Bar
+- **Fixed bottom bar** spanning full width
+- Two distinct sections:
+  - **Local Agents** (left section): Minimum 6 agents
+  - **API Agents** (right section): Minimum 10 agents
+- Visual separator (vertical divider) between sections
+- Horizontal scrolling for overflow agents
+- Agent cards show: icon, name, status indicator
+- Quick launch on click
+- Drag-and-drop reordering capability
+
+#### Modal Pop-Ups for Agent Configuration
+- Clicking an agent in catalog opens configuration modal
+- Modal contains:
+  - Agent details (name, description, capabilities)
+  - Configuration options (API keys, parameters, endpoints)
+  - Enable/disable toggle
+  - Save/Cancel actions
+- Backdrop overlay (semi-transparent black, 0.6 opacity)
+- Close on backdrop click or ESC key
+- Responsive sizing (90% width on mobile, max 800px on desktop)
+
+### 2.3 Minimalist Design Philosophy
+
+#### Clean Agent List/Grid
+- Simple card design with essential information only
+- Icon + Name + Status (no heavy decorations)
+- Consistent spacing (16px margins, 12px padding)
+- Subtle hover effects (slight elevation, border highlight)
+- Grid layout option for agent catalog (toggle between list/grid)
+
+#### Removal of Feature Cards
+- Eliminated heavy glassmorphism feature cards from main view
+- Focus on functional interface elements
+- Content-first approach: maximize space for browser and assistant
+
+#### Reduction of Heavy Glassmorphism
+- Glassmorphism effects limited to specific elements:
+  - Modal backgrounds (subtle blur)
+  - Navigation panels (light transparency)
+- Replaced heavy glass effects with solid, clean surfaces
+- Improved readability and performance
+
+#### More Whitespace
+- Generous spacing between elements (minimum 24px sections)
+- Breathing room around content areas
+- Clear visual hierarchy through spacing
+- Reduced cognitive load
+
+#### Updated Branding Placement
+- Logo in top-left corner of main toolbar
+- Small, unobtrusive size (32x32px or text-based)
+- Removed background logo watermarks
+- Brand color accents on interactive elements only
+
+### 2.4 Agent Catalog Structure
+
+#### Local Agents (Minimum 6)
+Agents that run locally without external API calls:
+1. **Web Scraper** - Extract data from web pages
+2. **Form Filler** - Automate form completion
+3. **Screenshot Tool** - Capture page screenshots
+4. **Data Extractor** - Parse and structure page data
+5. **Link Analyzer** - Analyze and validate links
+6. **Cookie Manager** - Manage browser cookies
+
+Configuration:
+- Local execution parameters
+- Selector patterns
+- Output formats
+- Scheduling options
+
+#### API Agents (Minimum 10)
+Agents that integrate with external APIs:
+1. **OpenAI GPT** - Language model integration
+2. **Claude** - Anthropic AI assistant
+3. **Perplexity Search** - Advanced web search
+4. **DALL-E** - Image generation
+5. **Stable Diffusion** - Open-source image generation
+6. **Google Search** - Web search API
+7. **Weather API** - Weather data retrieval
+8. **Translation API** - Multi-language translation
+9. **Email API** - Email sending/receiving
+10. **Calendar API** - Calendar integration
+11. **Social Media APIs** - Post to platforms
+12. **Database APIs** - Data storage and retrieval
+
+Configuration:
+- API key management
+- Endpoint customization
+- Rate limiting settings
+- Response handling preferences
+
+#### Editable Configuration
+- All agents support configuration via modal
+- Settings persist across sessions (localStorage/file)
+- Import/export agent configurations
+- Preset templates for common use cases
+
+### 2.5 Rationale for Changes
+
+#### Ease of Use
+- **Familiar Navigation Pattern**: Left sidebar navigation is an established pattern users recognize from VS Code, Slack, and other professional tools
+- **Contextual Access**: Assistant panel available when needed without cluttering main view
+- **Quick Agent Access**: Bottom bar provides one-click access to all agents
+- **Intuitive Configuration**: Modal-based settings are straightforward and focused
+
+#### Scalability
+- **Expandable Agent Catalog**: Easy to add new agents without UI restructure
+- **Modular Architecture**: Each component (nav, assistant, catalog) is independent
+- **Performance**: Reduced visual effects improve rendering performance
+- **Mobile-Ready**: Collapsible panels adapt well to smaller screens
+
+#### Modern Look
+- **Industry Standard**: Aligns with modern web application design patterns
+- **Professional Aesthetic**: Clean, minimalist design conveys sophistication
+- **Focus on Content**: Reduced decorative elements highlight functionality
+- **Consistency**: Unified design language across all components
+
+#### Familiar Navigation
+- **Muscle Memory**: Users familiar with similar tools (VS Code, browsers with sidebars) adapt quickly
+- **Predictable Interactions**: Standard patterns reduce learning curve
+- **Accessibility**: Clear navigation structure benefits screen readers and keyboard navigation
+
+## 3. Visual Design System (Updated)
+
+### 3.1 Dark Theme with Refined Aesthetics
 - **Primary Background**: Midnight blue (#0A0E1A, #111827)
-- **Secondary Colors**: Lighter blues for contrast and accent elements
-- **Typography**: Silver metallic text for headings on dark backgrounds
-- **Font**: Incorporate provided logo font style throughout the application
-- **Overall Feel**: Sleek, modern, and futuristic design language
+- **Surface Colors**: Slightly lighter blues (#1E293B, #334155) for panels
+- **Accent Colors**: Blue (#3B82F6) and cyan (#06B6D4) for interactive elements
+- **Typography**: System fonts for clarity (Inter, SF Pro, Segoe UI)
+- **Borders**: Subtle borders (1px, rgba(255,255,255,0.1)) for separation
 
-### 2.2 Feature Cards Design
-- **Glassmorphism Effect**: Translucent cards with subtle background blur
-- **Tilt Animation**: Interactive 3D tilt effects on hover/interaction
-- **Shimmer Effect**: Subtle animated shine/shimmer across card surfaces
-- **Glow Effects**: Light blue glow around feature cards for enhanced contrast
-- **Implementation Notes**: Use CSS transforms, backdrop-filter, and keyframe animations
+### 3.2 Component-Specific Styling
 
-### 2.3 Button Design System
-- **Liquid Glass Style**: Buttons appear to be made of clear, liquid glass
-- **Dynamic Effects**: Ripple, reflection, and refraction effects on interaction
-- **Hover States**: Smooth transitions with color shifts and depth changes
-- **Accessibility**: Maintain contrast ratios while preserving glass aesthetic
+#### Navigation Bar
+- Solid background (#1E293B)
+- Icon size: 24x24px
+- Hover: Background highlight (#334155)
+- Active: Blue accent border (3px left border)
 
-### 2.4 Loading Animation
+#### Assistant Panel
+- Semi-transparent background (rgba(30, 41, 59, 0.95))
+- Chat bubbles: User (blue), Assistant (gray)
+- Input area: Fixed bottom with button
+
+#### Agent Catalog Bar
+- Height: 80px
+- Card size: 64x64px per agent
+- Hover: Slight scale (1.05) and shadow
+- Status indicator: Colored dot (green=active, gray=inactive, red=error)
+
+#### Modals
+- Backdrop: rgba(0,0,0,0.6)
+- Modal: Solid background (#1E293B) with border
+- Shadow: Large, soft shadow for depth
+- Animation: Fade in + scale from 0.95 to 1.0
+
+### 3.3 Reduced Visual Effects
+- **Glassmorphism**: Only on modals and overlay panels, minimal blur (8px max)
+- **Animations**: Smooth but quick (200-300ms max)
+- **Shadows**: Subtle, used sparingly for depth
+- **Gradients**: Limited to accent elements (buttons, status indicators)
+
+### 3.4 Loading Animation
 - **Concept**: Blinking cursor typing "READY ROBOT" from left to right
 - **Typography**: Vintage/retro typewriter font (monospace, classic computing style)
 - **Colors**: Use logo color palette on black background
 - **Duration**: 2-3 second animation before main interface appears
 - **Implementation**: CSS keyframes with typewriter effect and cursor blink
 
-### 2.5 Logo Integration
-- **Background Element**: Subtle integration of logo as part of main page background
-- **Opacity**: Low opacity (10-15%) to avoid overwhelming content
-- **Positioning**: Centered or bottom-right corner placement
-- **Responsiveness**: Scale appropriately across different screen sizes
+## 4. Implementation Priorities
 
-### 2.6 Agents Page Modernization
-- **Layout**: Modern grid-based design with card components
-- **Styling**: Consistent with overall glass/metallic theme
-- **Interactions**: Smooth animations and transitions
-- **Typography**: Silver metallic headings with improved hierarchy
-- **Visual Hierarchy**: Clear distinction between agent categories and individual agents
+### Phase 1: Core Architecture (Weeks 1-3)
+1. **Left Navigation Bar**
+   - Implement collapsible sidebar component
+   - Add navigation items and routing
+   - State persistence (collapsed/expanded)
+   
+2. **Bottom Agent Catalog Bar**
+   - Create fixed bottom bar layout
+   - Implement local/API agent sections
+   - Add horizontal scrolling
+   - Agent card component with status
 
-## 1. Product Overview and Goals
+3. **Right Assistant Panel**
+   - Slide-out panel component
+   - Chat interface (messages, input)
+   - Toggle button in header
 
-Ready Robot is a modular desktop browser built on Chromium/Electron that embeds a multi-model AI assistant and agentic automation engine. It enables users and developers to compose, run, and share automated browsing workflows that combine deterministic steps with reasoning-driven actions.
+4. **Modal System**
+   - Reusable modal component
+   - Agent configuration form
+   - Backdrop and close handlers
 
-### Primary Design Goal: Extreme Ease of Use
-This platform prioritizes **extreme ease-of-use** above all else. Every interaction, from basic browsing to advanced agent creation, must be intuitive for beginners while remaining powerful for experts. The interface should eliminate technical barriers and make AI automation accessible to non-technical users through visual, template-driven workflows.
+### Phase 2: Agent Integration (Weeks 4-6)
+1. **Local Agents**
+   - Implement minimum 6 local agents
+   - Configuration interfaces for each
+   - Local execution logic
 
-### Goals
-- Deliver a reliable Electron-based browser with modern navigation and isolation primitives
-- Provide an integrated, multi-model AI assistant for reasoning, extraction, and action planning
-- **Integrate web search seamlessly** through embedded search nodes and browser navigation capabilities
-- Leverage best-in-class open-source libraries for agentic workflows, graph visualization, and workflow automation
-- Offer a **drag-and-drop visual workflow builder** and marketplace for sharing automations and agents
-- **Provide extensive template gallery** with prebuilt agents and customization options
-- Ensure strong security via sandboxing, permissions, an API key vault, and auditability
-- Build a sustainable ecosystem with a sandbox for testing and monetization options
-- **Prioritize GraphRAG tool simplicity** for knowledge management workflows
+2. **API Agents**
+   - Implement minimum 10 API agents
+   - API key management system
+   - Rate limiting and error handling
 
-### Non-Goals (MVP)
-- Full mobile clients (focus on desktop: macOS, Windows, Linux)
-- Server-side hosted browser farms (local-first with optional remote runners later)
-- Custom development of workflow engines, graph databases, or visualization frameworks (leveraging open-source solutions instead)
+3. **Configuration Persistence**
+   - Save/load agent settings
+   - Import/export functionality
+   - Preset templates
 
-## 3. Implementation Requirements
+### Phase 3: Polish and Features (Weeks 7-9)
+1. **UI Refinements**
+   - Smooth animations
+   - Responsive design (mobile/tablet)
+   - Keyboard shortcuts
+   - Accessibility (ARIA labels, keyboard navigation)
 
-### 3.1 Frontend Implementation
-- **CSS Framework**: Modern CSS with CSS Grid, Flexbox, and custom properties
-- **Animations**: CSS transitions, transforms, and keyframe animations
-- **Glass Effects**: backdrop-filter, box-shadow, and gradient overlays
-- **Responsive Design**: Fluid layouts that maintain glass aesthetic across screen sizes
+2. **Agent Management**
+   - Drag-and-drop reordering
+   - Enable/disable agents
+   - Agent search/filter
 
-### 3.2 Color Palette Specifications
-```css
-:root {
-  --primary-bg: #0A0E1A;
-  --secondary-bg: #111827;
-  --accent-blue: #3B82F6;
-  --glow-blue: #60A5FA;
-  --metallic-silver: #E5E7EB;
-  --glass-white: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.2);
-}
-```
+3. **Assistant Enhancements**
+   - Context-aware responses
+   - Agent suggestion system
+   - Conversation history
 
-### 3.3 Typography System
-```css
-.heading-metallic {
-  color: var(--metallic-silver);
-  text-shadow: 0 0 10px rgba(229, 231, 235, 0.5);
-  font-family: 'Logo-Font', sans-serif;
-}
+### Phase 4: Testing and Launch (Weeks 10-12)
+1. **Testing**
+   - Cross-browser testing
+   - Performance optimization
+   - User testing and feedback
+   
+2. **Documentation**
+   - User guide for new UI
+   - Agent configuration tutorials
+   - API documentation for extensions
 
-.typewriter-font {
-  font-family: 'Courier New', 'Monaco', monospace;
-  font-weight: 400;
-}
-```
+3. **Launch Preparation**
+   - Final bug fixes
+   - Marketing materials
+   - Release notes
 
-## 4. Integrated Web Search Capabilities
+## 5. Next Development Steps
 
-### 4.1 Browser as Search Tool
-The browser acts as an integrated web search tool, eliminating the need for separate search utilities:
+### Immediate (This Week)
+1. Create wireframes for new layout
+2. Set up component structure (navigation, assistant panel, catalog bar)
+3. Implement basic left navigation with routing
+4. Create modal component system
 
-- **Unified Search Bar**: Combines address bar, search, and command input
-- **Search Node Integration**: Direct integration with workflow nodes for search operations
-- **Multi-Engine Support**: Google, Bing, DuckDuckGo with smart routing
-- **Search Result Processing**: AI-powered extraction and summarization of search results
-- **Context Awareness**: Search suggestions based on current workflow and page content
+### Short-Term (Next 2 Weeks)
+1. Build out bottom agent catalog with scrolling
+2. Implement right assistant panel with chat UI
+3. Integrate first 3 local agents (Web Scraper, Form Filler, Screenshot)
+4. Set up configuration system and persistence
 
-### 4.2 Search Integration Architecture
-- **Search API Layer**: Abstracted search interface supporting multiple providers
-- **Result Caching**: Intelligent caching of search results for workflow reuse
-- **Search Analytics**: Track search patterns to improve workflow suggestions
-- **Privacy Controls**: User-configurable search privacy and data retention settings
+### Medium-Term (Next 4-6 Weeks)
+1. Complete all local agents (minimum 6)
+2. Complete all API agents (minimum 10)
+3. Implement drag-and-drop for agent reordering
+4. Add responsive design for mobile/tablet
+5. Performance optimization pass
 
-## 5. Technical Architecture
+### Long-Term (2-3 Months)
+1. Advanced agent marketplace
+2. Custom agent builder
+3. Workflow automation (chain multiple agents)
+4. Community sharing platform
+5. Enterprise features (team management, SSO)
 
-### 5.1 Electron Framework
-- **Main Process**: Core browser engine, security policies, and system integration
-- **Renderer Process**: UI components, workflow editor, and user interactions
-- **Preload Scripts**: Secure communication bridge between main and renderer processes
-- **Process Isolation**: Separate processes for security and stability
+## 6. Success Metrics
 
-### 5.2 AI Integration
-- **Multi-Model Support**: OpenAI GPT, Anthropic Claude, Google Gemini, local models
-- **Model Router**: Intelligent routing based on task requirements and user preferences
-- **Context Management**: Efficient context handling for long conversations and workflows
-- **API Key Management**: Secure storage and rotation of API credentials
+### User Adoption
+- **Onboarding Success**: 90% of users successfully configure at least one agent
+- **Agent Usage**: 80% of users activate at least 3 agents in first week
+- **Retention**: 70% monthly active user retention after 3 months
+- **Time to Value**: Users complete first automated task within 10 minutes
 
-### 5.3 Workflow Engine
-- **Visual Builder**: Drag-and-drop interface powered by React Flow or similar
-- **Node System**: Extensible node architecture for different action types
-- **Execution Engine**: Reliable workflow execution with error handling and retries
-- **State Management**: Persistent workflow state and variable management
+### Technical Performance
+- **Load Time**: Application starts within 2 seconds
+- **Panel Animations**: Smooth 60fps animations for slide-outs
+- **Agent Response**: Local agents execute within 1 second
+- **API Latency**: API agents return results within 5 seconds (network dependent)
 
-## 6. Security and Privacy
-
-### 6.1 Sandboxing
-- **Process Isolation**: Each workflow runs in isolated context
-- **Permission System**: Granular permissions for different operations
-- **Network Policies**: Configurable network access controls
-- **File System Access**: Limited and controlled file system interactions
-
-### 6.2 Data Protection
-- **Local-First**: Core functionality works without cloud dependencies
-- **Encryption**: End-to-end encryption for sensitive workflow data
-- **API Key Vault**: Secure storage of API credentials with encryption
-- **Audit Logging**: Comprehensive logging of user actions and system events
-
-## 7. User Experience Design
-
-### 7.1 Onboarding Flow
-- **Welcome Screen**: Animated logo introduction with typewriter effect
-- **Template Gallery**: Curated selection of starter workflows
-- **Interactive Tutorial**: Hands-on tutorial building first automation
-- **Setup Wizard**: Guided configuration of AI models and preferences
-
-### 7.2 Main Interface
-- **Dashboard**: Overview of recent workflows, templates, and system status
-- **Workflow Editor**: Visual canvas for building and editing automations
-- **Browser View**: Integrated browser with automation overlay
-- **Agent Management**: Centralized management of AI agents and configurations
-
-### 7.3 Template System
-- **Category Organization**: Templates organized by use case and complexity
-- **Search and Filtering**: Advanced search with tags and metadata
-- **Customization Options**: Easy modification of template parameters
-- **Community Sharing**: Platform for sharing and discovering workflows
-
-## 8. Monetization and Business Model
-
-### 8.1 Tier Structure
-- **Free Tier**: Basic browser functionality and limited AI usage
-- **Pro Tier**: Advanced features, higher AI limits, premium templates
-- **Team Tier**: Collaboration features, shared workflows, team management
-- **Enterprise Tier**: Custom integrations, advanced security, dedicated support
-
-### 8.2 Feature Gating
-- **AI Usage Limits**: Credit-based system for AI model usage
-- **Advanced Nodes**: Premium workflow nodes for complex operations
-- **Template Access**: Exclusive access to premium template library
-- **Storage Limits**: Tiered storage for workflows and data
-
-## 9. Development Roadmap
-
-### Phase 1: Foundation (Weeks 1-4)
-- Electron application setup and basic browser functionality
-- Implementation of Ready Robot branding and dark theme
-- Basic UI components with glassmorphism effects
-- Loading animation and logo integration
-
-### Phase 2: Core Features (Weeks 5-8)
-- AI integration and multi-model support
-- Basic workflow editor with visual nodes
-- Template system foundation
-- Security and sandboxing implementation
-
-### Phase 3: Advanced Features (Weeks 9-12)
-- Advanced workflow nodes and automation capabilities
-- Community features and template sharing
-- Performance optimization and testing
-- Documentation and user guides
-
-### Phase 4: Polish and Launch (Weeks 13-16)
-- UI/UX refinements and accessibility improvements
-- Beta testing and feedback integration
-- Final security audit and penetration testing
-- Launch preparation and marketing materials
-
-## 10. Success Metrics
-
-### 10.1 User Adoption
-- **Onboarding Success**: 90% of users complete initial setup
-- **Template Usage**: 80% of new users use at least one template in first week
-- **Workflow Creation**: 70% of users create custom workflow within first month
-- **Retention**: 60% monthly active user retention after 3 months
-
-### 10.2 Technical Performance
-- **Load Time**: Application starts within 3 seconds
-- **Workflow Execution**: 95% success rate for workflow executions
-- **Search Integration**: Sub-second search response times
-- **Stability**: Less than 1% crash rate in production
-
-### 10.3 Business Metrics
-- **Conversion Rate**: 15% free-to-paid conversion within 3 months
-- **Template Engagement**: Average 5+ template downloads per user
-- **Community Growth**: 100+ community-contributed templates within 6 months
-- **Enterprise Adoption**: 10+ enterprise customers within first year
+### Usability
+- **Task Completion**: 95% success rate for agent configuration
+- **Error Rate**: Less than 5% of agent executions fail
+- **Support Requests**: Less than 10% of users require help with basic setup
+- **User Satisfaction**: 4.5+ star rating on feedback surveys
 
 ---
 
-**Implementation Priority**: Focus on core branding implementation, dark theme with glassmorphism effects, and loading animation as immediate next steps. The visual identity of Ready Robot should be established before advancing to complex workflow features.
+**Implementation Priority**: Focus on establishing the new Comet-style architecture first (navigation bar, assistant panel, agent catalog bar) before adding complex agent logic. The new layout provides the foundation for scalable agent management and superior user experience.
 
-**Commit Message**: Rebrand to Ready Robot with comprehensive UI/UX specifications: dark theme, glassmorphism, liquid glass buttons, metallic typography, typewriter loading animation, logo integration, and alternative naming suggestions.
+**Commit Message**: Implement Comet-style layout with left navigation, right assistant panel, bottom agent catalog (6+ local, 10+ API agents), modal configuration system, minimalist design, and improved UX architecture.
