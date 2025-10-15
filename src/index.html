@@ -1,247 +1,270 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Comet Browser - AI-Powered Web Navigation</title>
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/agentMenu.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
+    <link rel="stylesheet" href="styles/main.css" />
+    <link rel="stylesheet" href="styles/agentMenu.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Dark theme CSS variables applied to :root and .dark in CSS -->
+  </head>
+  <body class="app-shell" data-theme="dark">
     <!-- Loading Animation -->
-    <div id="loading-screen">
-        <div class="typewriter-container">
-            <span class="typewriter-text" id="typewriter"></span>
-            <span class="cursor"></span>
-        </div>
+    <div id="loading-screen" role="status" aria-live="polite">
+      <div class="typewriter-container">
+        <span id="typewriter" class="typewriter-text" aria-hidden="true"></span>
+        <span class="cursor" aria-hidden="true"></span>
+      </div>
     </div>
 
     <!-- Main App Container -->
-    <div id="app" style="display: none;">
-        <!-- Left Sidebar Navigation -->
-        <nav id="sidebar" class="sidebar">
-            <div class="sidebar-header">
-                <img src="ARCHERR.jpg" alt="Comet Logo" class="sidebar-logo">
-                <span class="sidebar-brand">Comet</span>
-            </div>
-            
-            <ul class="sidebar-menu">
-                <li class="sidebar-item active" data-view="home">
-                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        <polyline points="9 22 9 12 15 12 15 22"/>
-                    </svg>
-                    <span class="sidebar-label">Home</span>
-                </li>
-                <li class="sidebar-item" data-view="agents">
-                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"/>
-                        <rect x="14" y="3" width="7" height="7"/>
-                        <rect x="14" y="14" width="7" height="7"/>
-                        <rect x="3" y="14" width="7" height="7"/>
-                    </svg>
-                    <span class="sidebar-label">Agents</span>
-                </li>
-                <li class="sidebar-item" data-view="history">
-                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    <span class="sidebar-label">History</span>
-                </li>
-                <li class="sidebar-item" data-view="settings">
-                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m13.2 5.2l-4.2-4.2m0-6l-4.2-4.2"/>
-                    </svg>
-                    <span class="sidebar-label">Settings</span>
-                </li>
-            </ul>
-            
-            <button id="sidebar-toggle" class="sidebar-toggle">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="15 18 9 12 15 6"/>
-                </svg>
+    <div id="app" style="display: none;" class="app-grid" aria-label="Comet Browser Layout">
+      <!-- Left Sidebar Navigation -->
+      <nav id="sidebar" class="sidebar expanded" role="navigation" aria-label="Primary">
+        <div class="sidebar-header">
+          <img class="sidebar-logo" alt="Comet Logo" src="ARCHERR.jpg" />
+          <span class="sidebar-brand">Comet</span>
+        </div>
+
+        <ul class="sidebar-menu" role="list">
+          <li class="sidebar-item active" data-view="home" role="button" tabindex="0" aria-current="page" aria-label="Home">
+            <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span class="sidebar-label">Home</span>
+          </li>
+          <li class="sidebar-item" data-view="agents" role="button" tabindex="0" aria-label="Agents">
+            <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span class="sidebar-label">Agents</span>
+          </li>
+          <li class="sidebar-item" data-view="history" role="button" tabindex="0" aria-label="History">
+            <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span class="sidebar-label">History</span>
+          </li>
+          <li class="sidebar-item" data-view="settings" role="button" tabindex="0" aria-label="Settings">
+            <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m13.2 5.2l-4.2-4.2m0-6l-4.2-4.2"></path>
+            </svg>
+            <span class="sidebar-label">Settings</span>
+          </li>
+        </ul>
+
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Collapse sidebar" aria-expanded="true" title="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <!-- NOTE: Future routing outlet can mount here for nested nav -->
+      </nav>
+
+      <!-- Main Content Area -->
+      <main id="main-content" class="main-content" role="main" aria-label="Web browser">
+        <!-- Top Header -->
+        <header id="top-header" class="top-header" role="toolbar" aria-label="Navigation toolbar">
+          <div class="header-left">
+            <!-- Navigation Controls -->
+            <button id="back-btn" class="nav-btn" title="Back" aria-label="Go back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
             </button>
-        </nav>
+            <button id="forward-btn" class="nav-btn" title="Forward" aria-label="Go forward">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+            <button id="refresh-btn" class="nav-btn" title="Refresh" aria-label="Refresh page">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+            </button>
+          </div>
 
-        <!-- Main Content Area -->
-        <main id="main-content" class="main-content">
-            <!-- Top Header -->
-            <header id="top-header" class="top-header">
-                <div class="header-left">
-                    <!-- Navigation Controls -->
-                    <button id="back-btn" class="nav-btn" title="Back">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="15 18 9 12 15 6"/>
-                        </svg>
-                    </button>
-                    <button id="forward-btn" class="nav-btn" title="Forward">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                    </button>
-                    <button id="refresh-btn" class="nav-btn" title="Refresh">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 4 23 10 17 10"/>
-                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="header-center">
-                    <input type="text" id="url-input" class="url-input" placeholder="Enter URL or search...">
-                    <button id="go-btn" class="go-btn">Go</button>
-                </div>
-                
-                <div class="header-right">
-                    <button id="assistant-toggle" class="assistant-toggle" title="Toggle Assistant">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                    </button>
-                </div>
-            </header>
+          <div class="header-center" role="search">
+            <label for="url-input" class="visually-hidden">Enter URL or search</label>
+            <input id="url-input" class="url-input" type="text" placeholder="Enter URL or search..." aria-label="Address bar" />
+            <button id="go-btn" class="go-btn" aria-label="Go to address">Go</button>
+          </div>
 
-            <!-- Browser View -->
-            <div id="browser-view" class="browser-view">
-                <webview id="webview" src="about:blank"></webview>
-            </div>
+          <div class="header-right">
+            <button id="assistant-toggle" class="assistant-toggle" title="Toggle Assistant" aria-controls="assistant-panel" aria-expanded="false" aria-label="Open assistant panel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
 
-            <!-- Bottom Agent Catalog Bar -->
-            <div id="agent-catalog" class="agent-catalog">
-                <div class="catalog-section local-agents">
-                    <div class="catalog-header">Local Agents</div>
-                    <div id="local-agents-container" class="agents-container">
-                        <!-- Local agents will be dynamically added here -->
-                        <div class="agent-card" data-agent="web-navigator">
-                            <div class="agent-icon">🌐</div>
-                            <div class="agent-name">Web Navigator</div>
-                        </div>
-                        <div class="agent-card" data-agent="code-helper">
-                            <div class="agent-icon">💻</div>
-                            <div class="agent-name">Code Helper</div>
-                        </div>
-                        <div class="agent-card" data-agent="research">
-                            <div class="agent-icon">🔍</div>
-                            <div class="agent-name">Research</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="catalog-divider"></div>
-                
-                <div class="catalog-section api-agents">
-                    <div class="catalog-header">API Agents</div>
-                    <div id="api-agents-container" class="agents-container">
-                        <!-- API agents will be dynamically added here -->
-                        <div class="agent-card" data-agent="gpt-4">
-                            <div class="agent-icon">🤖</div>
-                            <div class="agent-name">GPT-4</div>
-                        </div>
-                        <div class="agent-card" data-agent="claude">
-                            <div class="agent-icon">🧠</div>
-                            <div class="agent-name">Claude</div>
-                        </div>
-                        <div class="agent-card" data-agent="perplexity">
-                            <div class="agent-icon">⚡</div>
-                            <div class="agent-name">Perplexity</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+        <!-- Browser View -->
+        <div id="browser-view" class="browser-view" role="region" aria-label="Webview container">
+          <webview id="webview" src="about:blank" role="document"></webview>
+        </div>
 
-        <!-- Right Assistant Panel -->
-        <aside id="assistant-panel" class="assistant-panel">
-            <div class="assistant-header">
-                <h3 class="assistant-title">Comet Assistant</h3>
-                <button id="assistant-close" class="assistant-close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
+        <!-- Bottom Agent Catalog Bar -->
+        <div id="agent-catalog" class="agent-catalog" role="region" aria-label="Agent catalog">
+          <div class="catalog-section local-agents">
+            <div class="catalog-header">Local Agents</div>
+            <div id="local-agents-container" class="agents-container">
+              <!-- Local agents will be dynamically added here -->
+              <div class="agent-card" data-agent="web-navigator" role="button" tabindex="0" aria-label="Web Navigator local agent">
+                <div class="agent-icon">🌐</div>
+                <div class="agent-name">Web Navigator</div>
+              </div>
+              <div class="agent-card" data-agent="code-helper" role="button" tabindex="0" aria-label="Code Helper local agent">
+                <div class="agent-icon">💻</div>
+                <div class="agent-name">Code Helper</div>
+              </div>
+              <div class="agent-card" data-agent="research" role="button" tabindex="0" aria-label="Research local agent">
+                <div class="agent-icon">🔍</div>
+                <div class="agent-name">Research</div>
+              </div>
             </div>
-            
-            <div id="chat-messages" class="chat-messages">
-                <div class="welcome-message">
-                    <p>👋 Hello! I'm Comet Assistant.</p>
-                    <p>Ask me anything about the current page, or request help with web tasks.</p>
-                </div>
+          </div>
+
+          <div class="catalog-divider" aria-hidden="true"></div>
+
+          <div class="catalog-section api-agents">
+            <div class="catalog-header">API Agents</div>
+            <div id="api-agents-container" class="agents-container">
+              <!-- API agents will be dynamically added here -->
+              <div class="agent-card" data-agent="gpt-4" role="button" tabindex="0" aria-label="GPT-4 API agent">
+                <div class="agent-icon">🤖</div>
+                <div class="agent-name">GPT-4</div>
+              </div>
+              <div class="agent-card" data-agent="claude" role="button" tabindex="0" aria-label="Claude API agent">
+                <div class="agent-icon">🧠</div>
+                <div class="agent-name">Claude</div>
+              </div>
+              <div class="agent-card" data-agent="perplexity" role="button" tabindex="0" aria-label="Perplexity API agent">
+                <div class="agent-icon">⚡</div>
+                <div class="agent-name">Perplexity</div>
+              </div>
             </div>
-            
-            <div class="chat-input-container">
-                <textarea id="chat-input" class="chat-input" placeholder="Ask Comet Assistant..." rows="1"></textarea>
-                <button id="chat-send" class="chat-send">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="22" y1="2" x2="11" y2="13"/>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
-                </button>
-            </div>
-        </aside>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Assistant Panel (Always Mounted) -->
+      <aside id="assistant-panel" class="assistant-panel" role="complementary" aria-label="Assistant panel">
+        <div class="assistant-header">
+          <h3 class="assistant-title">Comet Assistant</h3>
+          <button id="assistant-close" class="assistant-close" aria-label="Close assistant panel" title="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Model selection dropdown (stub) -->
+        <div class="assistant-controls" role="group" aria-label="Model selection">
+          <label for="model-select" class="assistant-label">Model</label>
+          <select id="model-select" class="assistant-select" aria-label="Select assistant model">
+            <optgroup label="Local">
+              <option value="local-1">Local Model 1 (stub)</option>
+              <option value="local-2">Local Model 2 (stub)</option>
+            </optgroup>
+            <optgroup label="API">
+              <option value="gpt-4">GPT-4 (stub)</option>
+              <option value="claude">Claude (stub)</option>
+              <option value="perplexity">Perplexity (stub)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions">
+          <div class="welcome-message">
+            👋 Hello! I'm Comet Assistant.
+            Ask me anything about the current page, or request help with web tasks.
+          </div>
+        </div>
+
+        <div class="chat-input-container" role="group" aria-label="Send a message">
+          <label for="chat-input" class="visually-hidden">Ask Comet Assistant</label>
+          <textarea id="chat-input" class="chat-input" placeholder="Ask Comet Assistant..." rows="1"></textarea>
+          <button id="chat-send" class="chat-send" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+
+        <!-- NOTE: Future assistant features (threads, tools) mount here -->
+      </aside>
     </div>
 
     <!-- Agent Configuration Modal -->
-    <div id="agent-config-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="agent-config-title">Agent Configuration</h3>
-                <button class="modal-close" id="agent-config-close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body" id="agent-config-body">
-                <!-- Agent configuration form will be dynamically loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="agent-config-cancel">Cancel</button>
-                <button class="btn-primary" id="agent-config-launch">Launch Agent</button>
-            </div>
+    <div id="agent-config-modal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="agent-config-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="agent-config-title">Agent Configuration</h3>
+          <button id="agent-config-close" class="modal-close" aria-label="Close configuration">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
+        <div id="agent-config-body" class="modal-body">
+          <!-- Agent configuration form will be dynamically loaded here -->
+          <div class="not-implemented">Not implemented yet</div>
+        </div>
+        <div class="modal-footer">
+          <button id="agent-config-cancel" class="btn-secondary">Cancel</button>
+          <button id="agent-config-launch" class="btn-primary">Launch Agent</button>
+        </div>
+      </div>
     </div>
 
     <!-- Scripts -->
     <script src="scripts/renderer.js"></script>
     <script src="scripts/agentMenu.js"></script>
     <script src="scripts/agentConfig.js"></script>
+
     <script>
-        // Loading animation script
-        const text = 'COMET BROWSER';
-        const typewriter = document.getElementById('typewriter');
-        let i = 0;
-        
-        function typeWriter() {
-            if (i < text.length) {
-                typewriter.textContent += text.charAt(i);
-                i++;
-                setTimeout(typeWriter, 100);
-            } else {
-                setTimeout(() => {
-                    document.getElementById('loading-screen').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('loading-screen').style.display = 'none';
-                        document.getElementById('app').style.display = 'flex';
-                        document.getElementById('app').style.opacity = '0';
-                        setTimeout(() => {
-                            document.getElementById('app').style.opacity = '1';
-                        }, 50);
-                    }, 500);
-                }, 800);
-            }
+      // Loading animation script
+      const text = 'COMET BROWSER';
+      const typewriter = document.getElementById('typewriter');
+      let i = 0;
+      function typeWriter() {
+        if (i < text.length) {
+          typewriter.textContent += text.charAt(i);
+          i++;
+          setTimeout(typeWriter, 100);
+        } else {
+          setTimeout(() => {
+            document.getElementById('loading-screen').style.opacity = '0';
+            setTimeout(() => {
+              document.getElementById('loading-screen').style.display = 'none';
+              document.getElementById('app').style.display = 'flex';
+              document.getElementById('app').style.opacity = '0';
+              setTimeout(() => {
+                document.getElementById('app').style.opacity = '1';
+              }, 50);
+            }, 500);
+          }, 800);
         }
-        
-        // Start typing animation on load
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(typeWriter, 500);
-        });
+      }
+      // Start typing animation on load
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(typeWriter, 500);
+      });
     </script>
-</body>
+  </body>
 </html>
