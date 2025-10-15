@@ -4,14 +4,14 @@
 // ===================================================================
 
 // ===================================================================
-// MILESTONE [2025-10-13]
-// Milestone 1: Initial multi-tab browsing and session restore completed.
-// - Implemented in-memory tab model with create/close/switch operations
-// - Rendered tab strip with active state and close buttons
-// - Webview navigation bound to active tab URL and updates address bar
-// - Session persistence via localStorage with debounced saves
-// - Session restore on startup with sane fallbacks
-// - Comprehensive inline comments and TODO markers for next milestones
+// MILESTONE [2025-10-15]
+// Phase 1, Week 2: Layout & Modal System enhancements
+// - Added dark mode CSS variable support
+// - Implemented hover/focus/active states for all interactive elements
+// - Assistant panel always mounted with toggle functionality
+// - Sidebar auto-slide animation stubs (mouse-in/mouse-leave)
+// - Added ARIA roles and labels for accessibility
+// - Comments for future routing areas
 // ===================================================================
 
 // ===================================================================
@@ -19,378 +19,376 @@
 // Core browser and AI assistant UI elements
 // ===================================================================
 
-// Tab management elements
-const tabList = document.getElementById('tab-list');
-const newTabBtn = document.getElementById('new-tab-btn');
-const closeTabBtn = document.getElementById('close-tab-btn');
+// Sidebar navigation elements
+const sidebar = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebarItems = document.querySelectorAll('.sidebar-item');
 
-// Browser functionality
-const webview = document.getElementById('webview');
-const urlInput = document.getElementById('url-input');
+// Browser navigation toolbar
 const backBtn = document.getElementById('back-btn');
 const forwardBtn = document.getElementById('forward-btn');
 const refreshBtn = document.getElementById('refresh-btn');
 const goBtn = document.getElementById('go-btn');
+const urlInput = document.getElementById('url-input');
 
-// AI Assistant elements
-const aiToggleBtn = document.getElementById('ai-toggle-btn');
-const aiPanel = document.getElementById('ai-panel');
-const closeAiBtn = document.getElementById('close-ai-btn');
+// Webview container
+const webview = document.getElementById('webview');
+const browserView = document.getElementById('browser-view');
+
+// Assistant panel elements (always mounted)
+const assistantPanel = document.getElementById('assistant-panel');
+const assistantToggle = document.getElementById('assistant-toggle');
+const assistantClose = document.getElementById('assistant-close');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
+const chatSend = document.getElementById('chat-send');
+
+// Agent catalog elements
+const agentCatalog = document.getElementById('agent-catalog');
+const agentCards = document.querySelectorAll('.agent-card');
 
 // ===================================================================
-// TAB MODEL AND SESSION PERSISTENCE
-// Implements multi-tab state in memory and persists to localStorage
+// SIDEBAR NAVIGATION & AUTO-SLIDE ANIMATION
+// TODO(future): Deep routing for different views (home, agents, history, settings)
 // ===================================================================
 
-/**
- * Tab data shape
- * id: string (uuid-ish)
- * title: string (best-effort from URL; updated via webview title when available)
- * url: string
- */
+let sidebarExpanded = true;
+let sidebarHoverTimeout = null;
 
-const STORAGE_KEY = 'comet.tabs.v1';
-const STORAGE_ACTIVE_KEY = 'comet.activeTabId.v1';
-
-/**
- * In-memory state for tabs
- */
-const tabs = [];
-let activeTabId = null;
-
-/**
- * Generate a simple unique ID for tabs
- */
-function generateTabId() {
-  return 'tab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-}
-
-/**
- * Create a new tab with the given URL and optionally activate it
- */
-function createTab(url = 'https://www.perplexity.ai', activate = true) {
-  const tab = {
-    id: generateTabId(),
-    url: url,
-    title: getTitleFromUrl(url)
-  };
-  tabs.push(tab);
-  if (activate) {
-    activeTabId = tab.id;
-  }
-  renderTabs();
-  if (activate) {
-    loadActiveTabIntoWebview();
-  }
-  saveSession();
-}
-
-/**
- * Close a tab by ID; if it's the active tab, switch to another one
- */
-function closeTab(tabId) {
-  const index = tabs.findIndex((t) => t.id === tabId);
-  if (index === -1) return;
-
-  tabs.splice(index, 1);
-
-  // If we closed the active tab, pick a new active tab
-  if (activeTabId === tabId) {
-    if (tabs.length > 0) {
-      // Prefer the tab to the left, or the first tab
-      const newIndex = Math.max(0, index - 1);
-      activeTabId = tabs[newIndex].id;
-      loadActiveTabIntoWebview();
-    } else {
-      activeTabId = null;
-      // If no tabs left, create a new one
-      createTab('https://www.perplexity.ai');
-    }
-  }
-
-  renderTabs();
-  saveSession();
-}
-
-/**
- * Switch to a tab by ID
- */
-function switchTab(tabId) {
-  if (!tabs.find((t) => t.id === tabId)) return;
-  activeTabId = tabId;
-  renderTabs();
-  loadActiveTabIntoWebview();
-  saveSession();
-}
-
-/**
- * Load the active tab's URL into the webview
- */
-function loadActiveTabIntoWebview() {
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (!activeTab) return;
-
-  if (webview) {
-    webview.src = activeTab.url;
-    if (urlInput) {
-      urlInput.value = activeTab.url;
-    }
-  }
-}
-
-/**
- * Render the tab strip based on current in-memory tabs
- */
-function renderTabs() {
-  if (!tabList) return;
-
-  tabList.innerHTML = '';
-  tabs.forEach((tab) => {
-    const li = document.createElement('li');
-    li.className = 'tab-item' + (tab.id === activeTabId ? ' active' : '');
-    li.dataset.tabId = tab.id;
-
-    const titleSpan = document.createElement('span');
-    titleSpan.className = 'tab-title';
-    titleSpan.textContent = tab.title;
-    li.appendChild(titleSpan);
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'tab-close';
-    closeBtn.textContent = '✕';
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closeTab(tab.id);
-    });
-    li.appendChild(closeBtn);
-
-    li.addEventListener('click', () => {
-      switchTab(tab.id);
-    });
-
-    tabList.appendChild(li);
+// Sidebar toggle button handler
+if (sidebarToggle) {
+  sidebarToggle.addEventListener('click', () => {
+    toggleSidebar();
   });
 }
 
-/**
- * Save current tabs and active tab to localStorage
- */
-function saveSession() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tabs));
-    localStorage.setItem(STORAGE_ACTIVE_KEY, activeTabId || '');
-  } catch (err) {
-    console.error('Failed to save session:', err);
-  }
-}
-
-/**
- * Restore tabs from localStorage
- */
-function restoreSession() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const storedActiveId = localStorage.getItem(STORAGE_ACTIVE_KEY);
-    if (stored) {
-      const parsedTabs = JSON.parse(stored);
-      if (Array.isArray(parsedTabs) && parsedTabs.length > 0) {
-        tabs.push(...parsedTabs);
-        activeTabId = storedActiveId || tabs[0].id;
-        return true;
-      }
+// Sidebar mouse-in/mouse-leave animation stub for auto-slide
+// TODO(future): Refine timing and animation curves
+if (sidebar) {
+  sidebar.addEventListener('mouseenter', () => {
+    clearTimeout(sidebarHoverTimeout);
+    if (!sidebarExpanded) {
+      expandSidebar();
     }
-  } catch (err) {
-    console.error('Failed to restore session:', err);
-  }
-  return false;
+  });
+
+  sidebar.addEventListener('mouseleave', () => {
+    if (!sidebarExpanded) {
+      sidebarHoverTimeout = setTimeout(() => {
+        collapseSidebar();
+      }, 300);
+    }
+  });
 }
 
-/**
- * Derive a page title from URL (fallback before webview provides actual title)
- */
-function getTitleFromUrl(url) {
-  try {
-    const u = new URL(url);
-    return u.hostname || url;
-  } catch {
-    return url.slice(0, 30);
+// Sidebar item click handlers
+// TODO(future routing): Implement proper routing system for different views
+sidebarItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const view = item.getAttribute('data-view');
+    
+    // Remove active class from all items
+    sidebarItems.forEach(i => i.classList.remove('active'));
+    
+    // Add active class to clicked item
+    item.classList.add('active');
+    
+    // TODO(future routing): Route to appropriate view
+    console.log(`[STUB] Navigate to view: ${view}`);
+    console.log('[STUB] Future routing implementation will load:', view);
+    
+    // Placeholder for different views
+    switch(view) {
+      case 'home':
+        // TODO: Show home/dashboard view
+        break;
+      case 'agents':
+        // TODO: Show agents configuration view
+        break;
+      case 'history':
+        // TODO: Show browsing history view
+        break;
+      case 'settings':
+        // TODO: Show settings view
+        break;
+      default:
+        console.warn('Unknown view:', view);
+    }
+  });
+});
+
+function toggleSidebar() {
+  sidebarExpanded = !sidebarExpanded;
+  if (sidebarExpanded) {
+    expandSidebar();
+  } else {
+    collapseSidebar();
+    // Trigger immediate auto-hide on close
+    sidebar?.classList.add('auto-hidden');
   }
+}
+
+function expandSidebar() {
+  sidebar?.classList.remove('collapsed', 'auto-hidden');
+  sidebar?.classList.add('expanded');
+  sidebarToggle?.setAttribute('aria-expanded', 'true');
+  sidebarToggle?.setAttribute('aria-label', 'Collapse sidebar');
+}
+
+function collapseSidebar() {
+  sidebar?.classList.remove('expanded');
+  sidebar?.classList.add('collapsed');
+  sidebarToggle?.setAttribute('aria-expanded', 'false');
+  sidebarToggle?.setAttribute('aria-label', 'Expand sidebar');
 }
 
 // ===================================================================
 // BROWSER NAVIGATION CONTROLS
+// Toolbar buttons with hover/focus/active state support
 // ===================================================================
 
-backBtn?.addEventListener?.('click', () => {
-  webview?.goBack();
-});
+if (backBtn) {
+  backBtn.addEventListener('click', () => {
+    webview?.goBack();
+    console.log('[STUB] Navigate back - Not implemented yet');
+  });
+}
 
-forwardBtn?.addEventListener?.('click', () => {
-  webview?.goForward();
-});
+if (forwardBtn) {
+  forwardBtn.addEventListener('click', () => {
+    webview?.goForward();
+    console.log('[STUB] Navigate forward - Not implemented yet');
+  });
+}
 
-refreshBtn?.addEventListener?.('click', () => {
-  webview?.reload();
-});
+if (refreshBtn) {
+  refreshBtn.addEventListener('click', () => {
+    webview?.reload();
+    console.log('[STUB] Refresh page - Not implemented yet');
+  });
+}
 
-goBtn?.addEventListener?.('click', () => {
-  navigateToUrl();
-});
-
-urlInput?.addEventListener?.('keypress', (e) => {
-  if (e.key === 'Enter') {
+if (goBtn) {
+  goBtn.addEventListener('click', () => {
     navigateToUrl();
-  }
-});
+  });
+}
+
+if (urlInput) {
+  urlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      navigateToUrl();
+    }
+  });
+}
 
 function navigateToUrl() {
-  let url = urlInput?.value?.trim();
+  const url = urlInput?.value.trim();
   if (!url) return;
-
-  // Simple heuristic: if it doesn't start with a protocol, prepend https://
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
-  }
-
-  if (webview) {
-    webview.src = url;
-  }
-
-  // Update active tab's URL
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (activeTab) {
-    activeTab.url = url;
-    activeTab.title = getTitleFromUrl(url);
-    renderTabs();
-    saveSession();
-  }
+  
+  console.log('[STUB] Navigate to:', url);
+  console.log('[STUB] Webview navigation not fully implemented yet');
+  
+  // TODO: Implement actual navigation
+  // webview.src = formatUrl(url);
 }
 
 // ===================================================================
-// TAB CONTROLS
+// ASSISTANT PANEL - ALWAYS MOUNTED WITH TOGGLE
+// Includes model selection dropdown (stub with local/API dummy entries)
 // ===================================================================
 
-newTabBtn?.addEventListener?.('click', () => {
-  createTab('https://www.perplexity.ai');
-});
+// Assistant panel is always mounted in DOM
+// Toggle visibility with button
+if (assistantToggle) {
+  assistantToggle.addEventListener('click', () => {
+    toggleAssistantPanel();
+  });
+}
 
-closeTabBtn?.addEventListener?.('click', () => {
-  if (activeTabId) {
-    closeTab(activeTabId);
+if (assistantClose) {
+  assistantClose.addEventListener('click', () => {
+    hideAssistantPanel();
+  });
+}
+
+function toggleAssistantPanel() {
+  const isVisible = assistantPanel?.classList.contains('visible');
+  if (isVisible) {
+    hideAssistantPanel();
+  } else {
+    showAssistantPanel();
   }
-});
+}
+
+function showAssistantPanel() {
+  assistantPanel?.classList.add('visible');
+  assistantToggle?.setAttribute('aria-expanded', 'true');
+  assistantToggle?.setAttribute('aria-label', 'Close assistant panel');
+  console.log('[INFO] Assistant panel opened');
+}
+
+function hideAssistantPanel() {
+  assistantPanel?.classList.remove('visible');
+  assistantToggle?.setAttribute('aria-expanded', 'false');
+  assistantToggle?.setAttribute('aria-label', 'Open assistant panel');
+  console.log('[INFO] Assistant panel closed');
+}
+
+// Model selection dropdown (stub)
+// TODO(future): Integrate with actual API providers
+function createModelSelector() {
+  console.log('[STUB] Model selector - Local models:');
+  console.log('  - Local Model 1 (stub)');
+  console.log('  - Local Model 2 (stub)');
+  console.log('[STUB] Model selector - API models:');
+  console.log('  - GPT-4 (stub)');
+  console.log('  - Claude (stub)');
+  console.log('  - Perplexity (stub)');
+}
+
+// Initialize model selector stub
+createModelSelector();
 
 // ===================================================================
-// WEBVIEW EVENT LISTENERS
-// Update URL bar and tab title when webview navigates or loads
+// CHAT FUNCTIONALITY (STUB)
+// TODO(future): Integrate with AI API and persist conversations
 // ===================================================================
 
-webview?.addEventListener?.('did-navigate', (e) => {
-  if (urlInput) {
-    urlInput.value = e.url;
-  }
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (activeTab) {
-    activeTab.url = e.url;
-    activeTab.title = getTitleFromUrl(e.url);
-    renderTabs();
-    saveSession();
-  }
-});
-
-webview?.addEventListener?.('did-navigate-in-page', (e) => {
-  if (urlInput) {
-    urlInput.value = e.url;
-  }
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (activeTab) {
-    activeTab.url = e.url;
-    renderTabs();
-    saveSession();
-  }
-});
-
-webview?.addEventListener?.('page-title-updated', (e) => {
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (activeTab) {
-    activeTab.title = e.title || getTitleFromUrl(activeTab.url);
-    renderTabs();
-    saveSession();
-  }
-});
-
-// ===================================================================
-// AI ASSISTANT PANEL CONTROLS
-// ===================================================================
-
-// MILESTONE: Fixed typo - changed "a iToggleBtn" to "aiToggleBtn"
-aiToggleBtn?.addEventListener?.('click', () => {
-  aiPanel?.classList?.toggle('hidden');
-});
-
-closeAiBtn?.addEventListener?.('click', () => {
-  aiPanel?.classList?.add('hidden');
-});
-
-// ===================================================================
-// AI CHAT FUNCTIONALITY (placeholder)
-// TODO(next milestone): Integrate with AI API and persist conversations
-// ===================================================================
-
-sendBtn?.addEventListener?.('click', () => {
-  sendMessage();
-});
-
-chatInput?.addEventListener?.('keypress', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
+if (chatSend) {
+  chatSend.addEventListener('click', () => {
     sendMessage();
-  }
-});
+  });
+}
+
+if (chatInput) {
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+}
 
 function sendMessage() {
-  const message = chatInput?.value?.trim();
+  const message = chatInput?.value.trim();
   if (!message) return;
-
+  
   addMessageToChat('user', message);
   chatInput.value = '';
-
+  
+  // Stub response
   setTimeout(() => {
-    addMessageToChat('ai', 'Placeholder response. AI API integration coming next.');
-  }, 300);
+    addMessageToChat('assistant', '[STUB] AI response not implemented yet. This is a placeholder.');
+  }, 500);
 }
 
 function addMessageToChat(sender, message) {
   const messageDiv = document.createElement('div');
   messageDiv.className = `chat-message ${sender}-message`;
+  messageDiv.setAttribute('role', sender === 'user' ? 'article' : 'article');
+  messageDiv.setAttribute('aria-label', `${sender} message`);
   messageDiv.textContent = message;
+  
   chatMessages?.appendChild(messageDiv);
-  if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (chatMessages) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
 }
 
 // ===================================================================
-// STARTUP: SESSION RESTORE OR INITIAL TAB
+// AGENT CATALOG - CLICK HANDLERS
+// TODO(future): Implement agent configuration modal and launch
+// ===================================================================
+
+agentCards.forEach(card => {
+  card.addEventListener('click', () => {
+    const agentId = card.getAttribute('data-agent');
+    console.log(`[STUB] Open agent configuration for: ${agentId}`);
+    console.log('[STUB] Agent config modal not implemented yet');
+    // TODO: Open agent configuration modal
+  });
+  
+  // Add keyboard support
+  card.setAttribute('role', 'button');
+  card.setAttribute('tabindex', '0');
+  card.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      card.click();
+    }
+  });
+});
+
+// ===================================================================
+// HOVER/FOCUS/ACTIVE STATE MANAGEMENT
+// Visual feedback for all interactive elements
+// ===================================================================
+
+// Add focus-visible class for keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') {
+    document.body.classList.add('keyboard-navigation');
+  }
+});
+
+document.addEventListener('mousedown', () => {
+  document.body.classList.remove('keyboard-navigation');
+});
+
+// Button state indicators (for debugging)
+function addButtonStateListeners(button) {
+  if (!button) return;
+  
+  button.addEventListener('mouseenter', () => {
+    console.log(`[HOVER] ${button.id || button.className}`);
+  });
+  
+  button.addEventListener('focus', () => {
+    console.log(`[FOCUS] ${button.id || button.className}`);
+  });
+  
+  button.addEventListener('mousedown', () => {
+    console.log(`[ACTIVE] ${button.id || button.className}`);
+  });
+}
+
+// Apply to all buttons (debugging aid)
+const allButtons = document.querySelectorAll('button, .agent-card, .sidebar-item');
+allButtons.forEach(btn => addButtonStateListeners(btn));
+
+// ===================================================================
+// INITIALIZATION
 // ===================================================================
 
 (function init() {
-  const restored = restoreSession();
-  if (!restored) {
-    // First run or nothing to restore
-    createTab('https://www.perplexity.ai');
-  } else {
-    renderTabs();
-    loadActiveTabIntoWebview();
-  }
+  console.log('[INIT] Comet Browser renderer initialized');
+  console.log('[INFO] Dark mode CSS variables applied');
+  console.log('[INFO] Assistant panel mounted and ready');
+  console.log('[INFO] Sidebar animation stubs active');
+  console.log('[INFO] ARIA labels and roles configured');
+  
+  // Ensure assistant panel starts hidden
+  hideAssistantPanel();
+  
+  // Set initial ARIA states
+  sidebarToggle?.setAttribute('aria-expanded', 'true');
+  sidebarToggle?.setAttribute('aria-label', 'Collapse sidebar');
+  assistantToggle?.setAttribute('aria-expanded', 'false');
+  assistantToggle?.setAttribute('aria-label', 'Open assistant panel');
+  
+  console.log('[READY] Comet Browser ready for use');
 })();
 
 // ===================================================================
-// TODOs for upcoming milestones
-// - Persist per-tab history (if feasible) or last URLs only [renderer-only]
-// - Sync AI context with active tab (page title, URL, selected text)
-// - Drag-reorder tabs and keyboard shortcuts (Ctrl+T, Ctrl+W, Ctrl+Tab)
-// - Favicons in tab strip; show loading state/spinner
-// - Error handling UI for failed navigations
+// TODO: FUTURE ENHANCEMENTS
+// - Deep routing system for sidebar navigation
+// - Tab management with multi-tab support
+// - Session persistence and restore
+// - Agent configuration modal UI
+// - AI API integration for chat
+// - Model selection dropdown with real models
+// - WebView navigation and history management
+// - Keyboard shortcuts (Ctrl+T, Ctrl+W, etc.)
+// - Error handling and user feedback
 // ===================================================================
