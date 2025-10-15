@@ -2,16 +2,11 @@
 // PHASE 1 - MILESTONE: TAILWIND CSS CONFIGURATION
 // ============================================================================
 // Tailwind CSS configuration for three-panel layout and component styling
-// All code below is commented out until Phase 1 implementation begins
-// ============================================================================
-
-/*
 // ============================================================================
 // PHASE 1: Tailwind CSS Configuration
 // ============================================================================
 // Custom Tailwind configuration for Comet Browser UI
 // Defines theme, colors, spacing, and responsive breakpoints
-
 module.exports = {
   content: [
     './src/**/*.{html,js}',
@@ -151,5 +146,3 @@ module.exports = {
   // ============================================================================
   darkMode: 'class', // Enable class-based dark mode
 };
-
-*/
