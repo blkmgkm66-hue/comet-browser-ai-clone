@@ -3,22 +3,15 @@
 // Main renderer script for browser UI and webview functionality
 // ===================================================================
 
-// ===================================================================
-// MILESTONE [2025-10-15]
-// Phase 1, Week 2: Layout & Modal System enhancements
-// - Added dark mode CSS variable support
-// - Implemented hover/focus/active states for all interactive elements
-// - Assistant panel always mounted with toggle functionality
-// - Sidebar auto-slide animation stubs (mouse-in/mouse-leave)
-// - Added ARIA roles and labels for accessibility
-// - Comments for future routing areas
-// ===================================================================
+// Milestone: Functional browser+AI assistant panel, basic NL navigation working
+// - Address bar loads webview; back/forward/refresh work
+// - Assistant panel toggle robust (class 'open' + aria/display)
+// - Minimal AI command interpreter: "Go to <url>" navigates browser
+// - Inline stubs for advanced agent behaviors (click/scrape/multi-step)
 
 // ===================================================================
 // DOM ELEMENT REFERENCES
-// Core browser and AI assistant UI elements
 // ===================================================================
-
 // Sidebar navigation elements
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -35,7 +28,7 @@ const urlInput = document.getElementById('url-input');
 const webview = document.getElementById('webview');
 const browserView = document.getElementById('browser-view');
 
-// Assistant panel elements (always mounted)
+// Assistant panel elements
 const assistantPanel = document.getElementById('assistant-panel');
 const assistantToggle = document.getElementById('assistant-toggle');
 const assistantClose = document.getElementById('assistant-close');
@@ -43,352 +36,276 @@ const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const chatSend = document.getElementById('chat-send');
 
-// Agent catalog elements
-const agentCatalog = document.getElementById('agent-catalog');
-const agentCards = document.querySelectorAll('.agent-card');
+// Tabs (optional/minimal support)
+const tabBar = document.getElementById('tab-bar');
+const tabItems = document.querySelectorAll('.tab-item');
 
-// ===================================================================
-// SIDEBAR NAVIGATION & AUTO-SLIDE ANIMATION
-// TODO(future): Deep routing for different views (home, agents, history, settings)
-// ===================================================================
-
-let sidebarExpanded = true;
-let sidebarHoverTimeout = null;
-
-// Sidebar toggle button handler
-if (sidebarToggle) {
-  sidebarToggle.addEventListener('click', () => {
-    toggleSidebar();
-  });
-}
-
-// Sidebar mouse-in/mouse-leave animation stub for auto-slide
-// TODO(future): Refine timing and animation curves
-if (sidebar) {
-  sidebar.addEventListener('mouseenter', () => {
-    clearTimeout(sidebarHoverTimeout);
-    if (!sidebarExpanded) {
-      expandSidebar();
+// Utility: Normalize and sanitize URL input
+function normalizeToURL(input) {
+  try {
+    // If already a valid absolute URL
+    const u = new URL(input);
+    return u.toString();
+  } catch (_) {
+    // If it looks like a domain without protocol, add https
+    if (/^([\w-]+\.)+[\w-]{2,}(\/[\S]*)?$/.test(input)) {
+      return `https://${input}`;
     }
-  });
-
-  sidebar.addEventListener('mouseleave', () => {
-    if (!sidebarExpanded) {
-      sidebarHoverTimeout = setTimeout(() => {
-        collapseSidebar();
-      }, 300);
-    }
-  });
-}
-
-// Sidebar item click handlers
-// TODO(future routing): Implement proper routing system for different views
-sidebarItems.forEach(item => {
-  item.addEventListener('click', () => {
-    const view = item.getAttribute('data-view');
-    
-    // Remove active class from all items
-    sidebarItems.forEach(i => i.classList.remove('active'));
-    
-    // Add active class to clicked item
-    item.classList.add('active');
-    
-    // TODO(future routing): Route to appropriate view
-    console.log(`[STUB] Navigate to view: ${view}`);
-    console.log('[STUB] Future routing implementation will load:', view);
-    
-    // Placeholder for different views
-    switch(view) {
-      case 'home':
-        // TODO: Show home/dashboard view
-        break;
-      case 'agents':
-        // TODO: Show agents configuration view
-        break;
-      case 'history':
-        // TODO: Show browsing history view
-        break;
-      case 'settings':
-        // TODO: Show settings view
-        break;
-      default:
-        console.warn('Unknown view:', view);
-    }
-  });
-});
-
-function toggleSidebar() {
-  sidebarExpanded = !sidebarExpanded;
-  if (sidebarExpanded) {
-    expandSidebar();
-  } else {
-    collapseSidebar();
-    // Trigger immediate auto-hide on close
-    sidebar?.classList.add('auto-hidden');
+    // If spaces or search-like, fallback to search engine query
+    const query = encodeURIComponent(input.trim());
+    return `https://www.google.com/search?q=${query}`;
   }
 }
 
-function expandSidebar() {
-  sidebar?.classList.remove('collapsed', 'auto-hidden');
-  sidebar?.classList.add('expanded');
-  sidebarToggle?.setAttribute('aria-expanded', 'true');
-  sidebarToggle?.setAttribute('aria-label', 'Collapse sidebar');
+// ===================================================================
+// BROWSER MAIN VIEW BEHAVIOR
+// ===================================================================
+function navigateTo(input) {
+  if (!webview) return;
+  const url = normalizeToURL(input);
+  webview.src = url;
+  if (urlInput) urlInput.value = url;
 }
 
-function collapseSidebar() {
-  sidebar?.classList.remove('expanded');
-  sidebar?.classList.add('collapsed');
-  sidebarToggle?.setAttribute('aria-expanded', 'false');
-  sidebarToggle?.setAttribute('aria-label', 'Expand sidebar');
+function updateNavButtons() {
+  // Electron <webview> exposes canGoBack/Forward via events; fallback toggles
+  // For plain <iframe>, we cannot inspect history; keep buttons enabled conservatively
+  if (!webview) return;
+  // Robustness: don't rely on properties that might not exist
+  const canBack = !!webview.canGoBack || false;
+  const canFwd = !!webview.canGoForward || false;
+  if (backBtn) backBtn.disabled = !canBack;
+  if (forwardBtn) forwardBtn.disabled = !canFwd;
 }
 
-// ===================================================================
-// BROWSER NAVIGATION CONTROLS
-// Toolbar buttons with hover/focus/active state support
-// ===================================================================
+function refreshView() {
+  if (!webview) return;
+  // Prefer reload() if available; otherwise reset src to force refresh
+  if (typeof webview.reload === 'function') {
+    webview.reload();
+  } else if (webview.src) {
+    const current = webview.src;
+    webview.src = current;
+  }
+}
 
+// Hook up address bar
+if (goBtn) {
+  goBtn.addEventListener('click', () => {
+    if (!urlInput) return;
+    navigateTo(urlInput.value);
+  });
+}
+
+if (urlInput) {
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      navigateTo(urlInput.value);
+    }
+  });
+}
+
+// Hook up nav buttons
 if (backBtn) {
   backBtn.addEventListener('click', () => {
-    webview?.goBack();
-    console.log('[STUB] Navigate back - Not implemented yet');
+    try {
+      if (webview && typeof webview.goBack === 'function') webview.goBack();
+      else window.history.back();
+    } catch (e) {
+      console.warn('Back navigation not available', e);
+    }
   });
 }
 
 if (forwardBtn) {
   forwardBtn.addEventListener('click', () => {
-    webview?.goForward();
-    console.log('[STUB] Navigate forward - Not implemented yet');
+    try {
+      if (webview && typeof webview.goForward === 'function') webview.goForward();
+      else window.history.forward();
+    } catch (e) {
+      console.warn('Forward navigation not available', e);
+    }
   });
 }
 
 if (refreshBtn) {
-  refreshBtn.addEventListener('click', () => {
-    webview?.reload();
-    console.log('[STUB] Refresh page - Not implemented yet');
+  refreshBtn.addEventListener('click', refreshView);
+}
+
+// Update address bar on navigation changes (best-effort across webview/iframe)
+if (webview) {
+  // Electron webview events
+  webview.addEventListener?.('did-navigate', (e) => {
+    if (urlInput && e.url) urlInput.value = e.url;
+    updateNavButtons();
+  });
+  webview.addEventListener?.('did-navigate-in-page', (e) => {
+    if (urlInput && e.url) urlInput.value = e.url;
+    updateNavButtons();
+  });
+  webview.addEventListener?.('did-start-loading', updateNavButtons);
+  webview.addEventListener?.('did-stop-loading', updateNavButtons);
+  // Fallback for iframe
+  webview.addEventListener?.('load', () => {
+    try {
+      const current = webview.src;
+      if (urlInput) urlInput.value = current;
+    } catch {}
+    updateNavButtons();
   });
 }
 
-if (goBtn) {
-  goBtn.addEventListener('click', () => {
-    navigateToUrl();
-  });
+// Minimal tab/page switching (single active tab)
+function setActiveTab(tabId) {
+  if (!tabItems || !tabItems.length) return;
+  tabItems.forEach((el) => el.classList.remove('active'));
+  const target = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+  if (target) target.classList.add('active');
 }
 
-if (urlInput) {
-  urlInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      navigateToUrl();
-    }
+// If tabs present, clicking switches visible page/view containers
+if (tabItems && tabItems.length) {
+  tabItems.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.getAttribute('data-tab');
+      setActiveTab(target);
+      // Future: load different URLs per tab or switch between multiple webviews
+    });
   });
-}
-
-function navigateToUrl() {
-  const url = urlInput?.value.trim();
-  if (!url) return;
-  
-  console.log('[STUB] Navigate to:', url);
-  console.log('[STUB] Webview navigation not fully implemented yet');
-  
-  // TODO: Implement actual navigation
-  // webview.src = formatUrl(url);
 }
 
 // ===================================================================
-// ASSISTANT PANEL - ALWAYS MOUNTED WITH TOGGLE
-// Includes model selection dropdown (stub with local/API dummy entries)
+// ASSISTANT PANEL TOGGLE (ROBUST)
 // ===================================================================
-
-// Assistant panel is always mounted in DOM
-// Toggle visibility with button
-if (assistantToggle) {
-  assistantToggle.addEventListener('click', () => {
-    toggleAssistantPanel();
-  });
-}
-
-if (assistantClose) {
-  assistantClose.addEventListener('click', () => {
-    hideAssistantPanel();
-  });
-}
-
-function toggleAssistantPanel() {
-  const isVisible = assistantPanel?.classList.contains('visible');
-  if (isVisible) {
-    hideAssistantPanel();
-  } else {
-    showAssistantPanel();
-  }
-}
-
-function showAssistantPanel() {
-  assistantPanel?.classList.add('visible');
-  assistantToggle?.setAttribute('aria-expanded', 'true');
-  assistantToggle?.setAttribute('aria-label', 'Close assistant panel');
-  console.log('[INFO] Assistant panel opened');
+function openAssistantPanel() {
+  if (!assistantPanel) return;
+  assistantPanel.classList.add('open');
+  assistantPanel.style.display = '';
+  assistantPanel.setAttribute?.('aria-hidden', 'false');
+  assistantToggle?.setAttribute?.('aria-expanded', 'true');
 }
 
 function hideAssistantPanel() {
-  assistantPanel?.classList.remove('visible');
-  assistantToggle?.setAttribute('aria-expanded', 'false');
-  assistantToggle?.setAttribute('aria-label', 'Open assistant panel');
-  console.log('[INFO] Assistant panel closed');
+  if (!assistantPanel) return;
+  assistantPanel.classList.remove('open');
+  assistantPanel.style.display = 'none';
+  assistantPanel.setAttribute?.('aria-hidden', 'true');
+  assistantToggle?.setAttribute?.('aria-expanded', 'false');
 }
 
-// Model selection dropdown (stub)
-// TODO(future): Integrate with actual API providers
-function createModelSelector() {
-  console.log('[STUB] Model selector - Local models:');
-  console.log('  - Local Model 1 (stub)');
-  console.log('  - Local Model 2 (stub)');
-  console.log('[STUB] Model selector - API models:');
-  console.log('  - GPT-4 (stub)');
-  console.log('  - Claude (stub)');
-  console.log('  - Perplexity (stub)');
+function toggleAssistantPanel() {
+  if (!assistantPanel) return;
+  const isOpen = assistantPanel.classList.contains('open');
+  if (isOpen) hideAssistantPanel(); else openAssistantPanel();
 }
 
-// Initialize model selector stub
-createModelSelector();
+assistantToggle?.addEventListener('click', toggleAssistantPanel);
+assistantClose?.addEventListener('click', hideAssistantPanel);
+
+// Ensure panel starts hidden but mounted
+hideAssistantPanel();
 
 // ===================================================================
-// CHAT FUNCTIONALITY (STUB)
-// TODO(future): Integrate with AI API and persist conversations
+// MINIMAL AI COMMAND INTERPRETER (BASIC NL NAVIGATION)
 // ===================================================================
-
-if (chatSend) {
-  chatSend.addEventListener('click', () => {
-    sendMessage();
-  });
+function appendChat(role, text) {
+  if (!chatMessages) return;
+  const item = document.createElement('div');
+  item.className = `chat-msg ${role}`;
+  item.textContent = text;
+  chatMessages.appendChild(item);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-if (chatInput) {
-  chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
+function handleAssistantCommand(text) {
+  const t = text.trim();
+  if (!t) return;
+
+  // Pattern: "go to <url>" (case-insensitive)
+  const goMatch = /^\s*go\s+to\s+(.+)$/i.exec(t);
+  if (goMatch && goMatch[1]) {
+    const target = goMatch[1].trim().replace(/^\s+|\s+$/g, '');
+    appendChat('assistant', `Navigating to ${target}...`);
+    navigateTo(target);
+    return;
+  }
+
+  // Future: add more commands here (open tab, back, forward, click selector, etc.)
+  appendChat('assistant', "I can navigate if you say 'Go to <url>'. More soon.");
 }
 
-function sendMessage() {
-  const message = chatInput?.value.trim();
-  if (!message) return;
-  
-  addMessageToChat('user', message);
+function sendChat() {
+  if (!chatInput) return;
+  const value = chatInput.value;
+  if (!value.trim()) return;
+  appendChat('user', value);
   chatInput.value = '';
-  
-  // Stub response
-  setTimeout(() => {
-    addMessageToChat('assistant', '[STUB] AI response not implemented yet. This is a placeholder.');
-  }, 500);
+  handleAssistantCommand(value);
 }
 
-function addMessageToChat(sender, message) {
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `chat-message ${sender}-message`;
-  messageDiv.setAttribute('role', sender === 'user' ? 'article' : 'article');
-  messageDiv.setAttribute('aria-label', `${sender} message`);
-  messageDiv.textContent = message;
-  
-  chatMessages?.appendChild(messageDiv);
-  if (chatMessages) {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+chatSend?.addEventListener('click', sendChat);
+chatInput?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
   }
-}
-
-// ===================================================================
-// AGENT CATALOG - CLICK HANDLERS
-// TODO(future): Implement agent configuration modal and launch
-// ===================================================================
-
-agentCards.forEach(card => {
-  card.addEventListener('click', () => {
-    const agentId = card.getAttribute('data-agent');
-    console.log(`[STUB] Open agent configuration for: ${agentId}`);
-    console.log('[STUB] Agent config modal not implemented yet');
-    // TODO: Open agent configuration modal
-  });
-  
-  // Add keyboard support
-  card.setAttribute('role', 'button');
-  card.setAttribute('tabindex', '0');
-  card.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      card.click();
-    }
-  });
 });
 
 // ===================================================================
-// HOVER/FOCUS/ACTIVE STATE MANAGEMENT
-// Visual feedback for all interactive elements
+// ACCESSIBILITY AND UX ENHANCEMENTS (LIGHTWEIGHT)
 // ===================================================================
-
-// Add focus-visible class for keyboard navigation
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab') {
-    document.body.classList.add('keyboard-navigation');
+  // Ctrl/Cmd+L to focus address bar
+  const isMeta = navigator.platform.toLowerCase().includes('mac') ? e.metaKey : e.ctrlKey;
+  if (isMeta && e.key.toLowerCase() === 'l') {
+    e.preventDefault();
+    urlInput?.focus();
+    urlInput?.select?.();
   }
 });
 
-document.addEventListener('mousedown', () => {
-  document.body.classList.remove('keyboard-navigation');
+// When the webview URL changes externally, keep input in sync where possible
+window.addEventListener('hashchange', () => {
+  try {
+    if (urlInput && webview?.src) urlInput.value = webview.src;
+  } catch {}
 });
 
-// Button state indicators (for debugging)
-function addButtonStateListeners(button) {
-  if (!button) return;
-  
-  button.addEventListener('mouseenter', () => {
-    console.log(`[HOVER] ${button.id || button.className}`);
-  });
-  
-  button.addEventListener('focus', () => {
-    console.log(`[FOCUS] ${button.id || button.className}`);
-  });
-  
-  button.addEventListener('mousedown', () => {
-    console.log(`[ACTIVE] ${button.id || button.className}`);
-  });
-}
-
-// Apply to all buttons (debugging aid)
-const allButtons = document.querySelectorAll('button, .agent-card, .sidebar-item');
-allButtons.forEach(btn => addButtonStateListeners(btn));
+// ===================================================================
+// STUBS FOR FUTURE AI-AGENT BEHAVIORS (COMMENTED; NO-OP TODAY)
+// ===================================================================
+// agentClick(selector):
+//   - In future milestones, the assistant will parse a command like
+//     "Click the Login button" into a DOM selector and execute within
+//     the active webview via preload/IPC to avoid cross-origin issues.
+//   - Security: will sandbox and restrict actions; require user consent.
+// agentScrape(selector):
+//   - Extract text/attributes from elements matched by selector within
+//     the webview DOM; stream results to chat.
+// agentMultiStep(plan):
+//   - Execute sequences: navigate, waitFor, click, type, scrape; with
+//     retries, timeouts, and clear user-visible summaries.
+// historyPersistence:
+//   - Persist visited URLs per tab and restore session state on launch.
+// toolUse:
+//   - Integrate model call and tools (search, open, click) with a planner.
 
 // ===================================================================
 // INITIALIZATION
 // ===================================================================
-
 (function init() {
-  console.log('[INIT] Comet Browser renderer initialized');
-  console.log('[INFO] Dark mode CSS variables applied');
-  console.log('[INFO] Assistant panel mounted and ready');
-  console.log('[INFO] Sidebar animation stubs active');
-  console.log('[INFO] ARIA labels and roles configured');
-  
-  // Ensure assistant panel starts hidden
-  hideAssistantPanel();
-  
-  // Set initial ARIA states
-  sidebarToggle?.setAttribute('aria-expanded', 'true');
-  sidebarToggle?.setAttribute('aria-label', 'Collapse sidebar');
-  assistantToggle?.setAttribute('aria-expanded', 'false');
-  assistantToggle?.setAttribute('aria-label', 'Open assistant panel');
-  
-  console.log('[READY] Comet Browser ready for use');
-})();
+  // Default home if provided via data-home attribute
+  const home = webview?.getAttribute?.('data-home');
+  if (home && !webview.src) {
+    navigateTo(home);
+  }
 
-// ===================================================================
-// TODO: FUTURE ENHANCEMENTS
-// - Deep routing system for sidebar navigation
-// - Tab management with multi-tab support
-// - Session persistence and restore
-// - Agent configuration modal UI
-// - AI API integration for chat
-// - Model selection dropdown with real models
-// - WebView navigation and history management
-// - Keyboard shortcuts (Ctrl+T, Ctrl+W, etc.)
-// - Error handling and user feedback
-// ===================================================================
+  // Optional: click on active tab to enforce initial state
+  if (tabItems && tabItems.length) {
+    const active = document.querySelector('.tab-item.active');
+    active?.dispatchEvent(new Event('click'));
+  }
+
+  // Keep nav buttons reasonably updated initially
+  updateNavButtons();
+})();
