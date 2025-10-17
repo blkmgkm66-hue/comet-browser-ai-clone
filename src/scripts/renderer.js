@@ -2,17 +2,15 @@
 // COMET BROWSER - RENDERER PROCESS
 // Main renderer script for browser UI and webview functionality
 // ===================================================================
-
 // Milestone: Functional browser+AI assistant panel, basic NL navigation working
 // - Address bar loads webview; back/forward/refresh work
 // - Assistant panel toggle robust (class 'open' + aria/display)
-// - Minimal AI command interpreter: "Go to <url>" navigates browser
-// - Inline stubs for advanced agent behaviors (click/scrape/multi-step)
+// - AI command interpreter now supports: Go to, Click, Fill, Scrape
+// - LLM fallback (OpenAI/Anthropic/Perplexity) for ambiguous commands via backend router
+// ===================================================================
 
-// ===================================================================
 // DOM ELEMENT REFERENCES
-// ===================================================================
-// Sidebar navigation elements
+// -------------------------------------------------------------------
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
 const sidebarItems = document.querySelectorAll('.sidebar-item');
@@ -40,222 +38,290 @@ const chatSend = document.getElementById('chat-send');
 const tabBar = document.getElementById('tab-bar');
 const tabItems = document.querySelectorAll('.tab-item');
 
-// Utility: Normalize and sanitize URL input
+// ===================================================================
+// UTILITIES
+// ===================================================================
 function normalizeToURL(input) {
   try {
-    // If already a valid absolute URL
     const u = new URL(input);
     return u.toString();
   } catch (_) {
-    // If it looks like a domain without protocol, add https
-    if (/^([\w-]+\.)+[\w-]{2,}(\/[\S]*)?$/.test(input)) {
+    if (/^([\w-]+\.)+[\w-]{2,}(\/[^\s]*)?$/.test(input)) {
       return `https://${input}`;
     }
-    // If spaces or search-like, fallback to search engine query
     const query = encodeURIComponent(input.trim());
     return `https://www.google.com/search?q=${query}`;
   }
 }
 
-// ===================================================================
-// BROWSER MAIN VIEW BEHAVIOR
-// ===================================================================
-function navigateTo(input) {
-  if (!webview) return;
-  const url = normalizeToURL(input);
-  webview.src = url;
-  if (urlInput) urlInput.value = url;
-}
-
-function updateNavButtons() {
-  // Electron <webview> exposes canGoBack/Forward via events; fallback toggles
-  // For plain <iframe>, we cannot inspect history; keep buttons enabled conservatively
-  if (!webview) return;
-  // Robustness: don't rely on properties that might not exist
-  const canBack = !!webview.canGoBack || false;
-  const canFwd = !!webview.canGoForward || false;
-  if (backBtn) backBtn.disabled = !canBack;
-  if (forwardBtn) forwardBtn.disabled = !canFwd;
-}
-
-function refreshView() {
-  if (!webview) return;
-  // Prefer reload() if available; otherwise reset src to force refresh
-  if (typeof webview.reload === 'function') {
-    webview.reload();
-  } else if (webview.src) {
-    const current = webview.src;
-    webview.src = current;
-  }
-}
-
-// Hook up address bar
-if (goBtn) {
-  goBtn.addEventListener('click', () => {
-    if (!urlInput) return;
-    navigateTo(urlInput.value);
-  });
-}
-
-if (urlInput) {
-  urlInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      navigateTo(urlInput.value);
-    }
-  });
-}
-
-// Hook up nav buttons
-if (backBtn) {
-  backBtn.addEventListener('click', () => {
-    try {
-      if (webview && typeof webview.goBack === 'function') webview.goBack();
-      else window.history.back();
-    } catch (e) {
-      console.warn('Back navigation not available', e);
-    }
-  });
-}
-
-if (forwardBtn) {
-  forwardBtn.addEventListener('click', () => {
-    try {
-      if (webview && typeof webview.goForward === 'function') webview.goForward();
-      else window.history.forward();
-    } catch (e) {
-      console.warn('Forward navigation not available', e);
-    }
-  });
-}
-
-if (refreshBtn) {
-  refreshBtn.addEventListener('click', refreshView);
-}
-
-// Update address bar on navigation changes (best-effort across webview/iframe)
-if (webview) {
-  // Electron webview events
-  webview.addEventListener?.('did-navigate', (e) => {
-    if (urlInput && e.url) urlInput.value = e.url;
-    updateNavButtons();
-  });
-  webview.addEventListener?.('did-navigate-in-page', (e) => {
-    if (urlInput && e.url) urlInput.value = e.url;
-    updateNavButtons();
-  });
-  webview.addEventListener?.('did-start-loading', updateNavButtons);
-  webview.addEventListener?.('did-stop-loading', updateNavButtons);
-  // Fallback for iframe
-  webview.addEventListener?.('load', () => {
-    try {
-      const current = webview.src;
-      if (urlInput) urlInput.value = current;
-    } catch {}
-    updateNavButtons();
-  });
-}
-
-// Minimal tab/page switching (single active tab)
-function setActiveTab(tabId) {
-  if (!tabItems || !tabItems.length) return;
-  tabItems.forEach((el) => el.classList.remove('active'));
-  const target = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
-  if (target) target.classList.add('active');
-}
-
-// If tabs present, clicking switches visible page/view containers
-if (tabItems && tabItems.length) {
-  tabItems.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const target = tab.getAttribute('data-tab');
-      setActiveTab(target);
-      // Future: load different URLs per tab or switch between multiple webviews
-    });
-  });
-}
-
-// ===================================================================
-// ASSISTANT PANEL TOGGLE (ROBUST)
-// ===================================================================
-function openAssistantPanel() {
-  if (!assistantPanel) return;
-  assistantPanel.classList.add('open');
-  assistantPanel.style.display = '';
-  assistantPanel.setAttribute?.('aria-hidden', 'false');
-  assistantToggle?.setAttribute?.('aria-expanded', 'true');
-}
-
-function hideAssistantPanel() {
-  if (!assistantPanel) return;
-  assistantPanel.classList.remove('open');
-  assistantPanel.style.display = 'none';
-  assistantPanel.setAttribute?.('aria-hidden', 'true');
-  assistantToggle?.setAttribute?.('aria-expanded', 'false');
-}
-
-function toggleAssistantPanel() {
-  if (!assistantPanel) return;
-  const isOpen = assistantPanel.classList.contains('open');
-  if (isOpen) hideAssistantPanel(); else openAssistantPanel();
-}
-
-assistantToggle?.addEventListener('click', toggleAssistantPanel);
-assistantClose?.addEventListener('click', hideAssistantPanel);
-
-// Ensure panel starts hidden but mounted
-hideAssistantPanel();
-
-// ===================================================================
-// MINIMAL AI COMMAND INTERPRETER (BASIC NL NAVIGATION)
-// ===================================================================
-function appendChat(role, text) {
+function addChatMessage(role, text) {
   if (!chatMessages) return;
-  const item = document.createElement('div');
-  item.className = `chat-msg ${role}`;
-  item.textContent = text;
-  chatMessages.appendChild(item);
+  const el = document.createElement('div');
+  el.className = `msg ${role}`;
+  el.textContent = text;
+  chatMessages.appendChild(el);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function handleAssistantCommand(text) {
-  const t = text.trim();
-  if (!t) return;
-
-  // Pattern: "go to <url>" (case-insensitive)
-  const goMatch = /^\s*go\s+to\s+(.+)$/i.exec(t);
-  if (goMatch && goMatch[1]) {
-    const target = goMatch[1].trim().replace(/^\s+|\s+$/g, '');
-    appendChat('assistant', `Navigating to ${target}...`);
-    navigateTo(target);
-    return;
+function navigateTo(url) {
+  const safe = normalizeToURL(url);
+  if (webview) {
+    webview.src = safe;
   }
-
-  // Future: add more commands here (open tab, back, forward, click selector, etc.)
-  appendChat('assistant', "I can navigate if you say 'Go to <url>'. More soon.");
+  if (urlInput) urlInput.value = safe;
 }
 
-function sendChat() {
-  if (!chatInput) return;
-  const value = chatInput.value;
-  if (!value.trim()) return;
-  appendChat('user', value);
-  chatInput.value = '';
-  handleAssistantCommand(value);
+function updateNavButtons() {
+  backBtn && (backBtn.disabled = false);
+  forwardBtn && (forwardBtn.disabled = false);
 }
-
-chatSend?.addEventListener('click', sendChat);
-chatInput?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendChat();
-  }
-});
 
 // ===================================================================
-// ACCESSIBILITY AND UX ENHANCEMENTS (LIGHTWEIGHT)
+// WEBVIEW DOM HELPERS (executeJavaScript wrapper)
+// ===================================================================
+async function evalInWebview(fn, ...args) {
+  return new Promise((resolve, reject) => {
+    try {
+      if (webview && typeof webview.executeJavaScript === 'function') {
+        const code = `(${fn})(...${JSON.stringify(args)})`;
+        webview.executeJavaScript(code, true).then(resolve).catch(reject);
+      } else if (webview && webview.contentWindow) {
+        const reqId = `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        function onMessage(ev) {
+          if (!ev.data || ev.data.type !== 'wv-eval-resp' || ev.data.id !== reqId) return;
+          window.removeEventListener('message', onMessage);
+          ev.data.ok ? resolve(ev.data.result) : reject(new Error(ev.data.error || 'Eval error'));
+        }
+        window.addEventListener('message', onMessage);
+        webview.contentWindow.postMessage({ type: 'wv-eval', id: reqId, fn: fn.toString(), args }, '*');
+        setTimeout(() => {
+          window.removeEventListener('message', onMessage);
+          reject(new Error('Webview eval timeout'));
+        }, 15000);
+      } else {
+        reject(new Error('Webview not available'));
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+function pageClickImpl(selectorOrText) {
+  const s = selectorOrText;
+  const tryClick = (el) => {
+    if (!el) return false;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return false;
+    el.click();
+    return true;
+  };
+  try {
+    const el = document.querySelector(s);
+    if (tryClick(el)) return { ok: true, via: 'selector' };
+  } catch {}
+  const candidates = Array.from(document.querySelectorAll('button, a, input[type="button"], input[type="submit"], [role="button"]'));
+  const norm = (t) => (t || '').trim().toLowerCase();
+  let target = candidates.find(el => norm(el.textContent || el.value) === norm(s));
+  if (!target) target = candidates.find(el => norm(el.textContent || el.value).includes(norm(s)));
+  if (tryClick(target)) return { ok: true, via: 'text' };
+  return { ok: false, error: 'Element not found or not visible' };
+}
+
+function pageFillImpl(selectorOrField, value) {
+  const s = selectorOrField;
+  let el = null;
+  try { el = document.querySelector(s); } catch {}
+  const byLabel = () => {
+    const norm = (t) => (t || '').trim().toLowerCase();
+    const labels = Array.from(document.querySelectorAll('label'));
+    let label = labels.find(l => norm(l.textContent) === norm(s)) || labels.find(l => norm(l.textContent).includes(norm(s)));
+    if (label) {
+      const forId = label.getAttribute('for');
+      if (forId) return document.getElementById(forId);
+      const input = label.querySelector('input, textarea, [contenteditable="true"]');
+      if (input) return input;
+    }
+    const all = Array.from(document.querySelectorAll('input, textarea'));
+    return all.find(i => norm(i.placeholder) === norm(s) || norm(i.placeholder).includes(norm(s)));
+  };
+  if (!el) el = byLabel();
+  if (!el) return { ok: false, error: 'Field not found' };
+  const tag = (el.tagName || '').toLowerCase();
+  const type = (el.getAttribute('type') || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') {
+    el.focus();
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    if (type === 'submit') el.form?.submit?.();
+  } else if (el.isContentEditable) {
+    el.focus();
+    el.textContent = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  } else {
+    return { ok: false, error: 'Target is not fillable' };
+  }
+  const form = el.form || el.closest('form');
+  if (form) {
+    const hasSubmit = form.querySelector('button[type="submit"], input[type="submit"]');
+    if (hasSubmit) hasSubmit.click();
+  }
+  return { ok: true };
+}
+
+function pageScrapeImpl(selectorOrData) {
+  const s = selectorOrData?.trim();
+  const visibleText = () => {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let acc = '';
+    while (walker.nextNode()) {
+      const t = walker.currentNode.nodeValue;
+      if (t && t.trim()) acc += t.trim() + '\n';
+    }
+    return acc.trim();
+  };
+  if (!s || s.toLowerCase() === 'data' || s.toLowerCase() === 'text') {
+    return { ok: true, text: visibleText().slice(0, 5000) };
+  }
+  try {
+    const nodes = Array.from(document.querySelectorAll(s));
+    if (!nodes.length) return { ok: false, error: 'No elements match selector' };
+    const results = nodes.map(n => {
+      const tag = n.tagName.toLowerCase();
+      const text = (n.innerText || n.textContent || '').trim();
+      const attrs = {};
+      for (const a of n.attributes) attrs[a.name] = a.value;
+      return { tag, text: text.slice(0, 1000), attrs };
+    });
+    return { ok: true, results };
+  } catch (e) {
+    return { ok: false, error: 'Invalid selector' };
+  }
+}
+
+// ===================================================================
+// COMMAND INTERPRETER
+// ===================================================================
+function parseSimpleCommand(input) {
+  const raw = input.trim();
+  const lower = raw.toLowerCase();
+  const goMatch = lower.match(/^go to\s+(.+)$/);
+  if (goMatch) return { type: 'goto', url: raw.slice(6).trim() };
+  const clickMatch = lower.match(/^click\s+(.+)$/);
+  if (clickMatch) return { type: 'click', target: raw.slice(6).trim() };
+  const fillMatch = raw.match(/^fill\s+(.+?)\s+with\s+([\s\S]+)$/i);
+  if (fillMatch) return { type: 'fill', field: fillMatch[1].trim(), value: fillMatch[2].trim() };
+  const scrapeMatch = lower.match(/^scrape\s+(.+)$/);
+  if (scrapeMatch) return { type: 'scrape', target: raw.slice(7).trim() };
+  return null;
+}
+
+async function callLLMRouter(prompt) {
+  try {
+    const resp = await fetch('/api/model/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    if (!resp.ok) throw new Error(`Router HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+async function runCommand(input) {
+  addChatMessage('user', input);
+  let plan = parseSimpleCommand(input);
+  if (!plan) {
+    addChatMessage('assistant', 'Parsing with model...');
+    const llm = await callLLMRouter(input);
+    if (llm && llm.plan) {
+      plan = llm.plan;
+    } else {
+      addChatMessage('assistant', `Could not parse command: ${llm?.error || 'unknown error'}`);
+      return;
+    }
+  }
+  try {
+    if (plan.type === 'goto') {
+      navigateTo(plan.url);
+      addChatMessage('assistant', `Navigating to ${plan.url}`);
+      return;
+    }
+    if (plan.type === 'click') {
+      const res = await evalInWebview(pageClickImpl, plan.target);
+      addChatMessage('assistant', res.ok ? `Clicked (${res.via})` : `Click failed: ${res.error}`);
+      return;
+    }
+    if (plan.type === 'fill') {
+      const res = await evalInWebview(pageFillImpl, plan.field, plan.value);
+      addChatMessage('assistant', res.ok ? 'Filled input' : `Fill failed: ${res.error}`);
+      return;
+    }
+    if (plan.type === 'scrape') {
+      const res = await evalInWebview(pageScrapeImpl, plan.target);
+      if (res.ok && res.text) {
+        addChatMessage('assistant', res.text);
+      } else if (res.ok && res.results) {
+        const summary = res.results.slice(0, 5).map((r, i) => `${i+1}. <${r.tag}> ${r.text}`).join('\n');
+        addChatMessage('assistant', summary || 'No content');
+      } else {
+        addChatMessage('assistant', `Scrape failed: ${res.error}`);
+      }
+      return;
+    }
+    addChatMessage('assistant', `Unsupported plan type: ${plan.type}`);
+  } catch (e) {
+    addChatMessage('assistant', `Error: ${e.message}`);
+  }
+}
+
+// ===================================================================
+// EVENT WIRING
+// ===================================================================
+function wireUI() {
+  if (assistantToggle && assistantPanel) {
+    assistantToggle.addEventListener('click', () => assistantPanel.classList.toggle('open'));
+  }
+  if (assistantClose && assistantPanel) {
+    assistantClose.addEventListener('click', () => assistantPanel.classList.remove('open'));
+  }
+  if (backBtn) backBtn.addEventListener('click', () => window.history.back());
+  if (forwardBtn) forwardBtn.addEventListener('click', () => window.history.forward());
+  if (refreshBtn && webview) refreshBtn.addEventListener('click', () => webview.src = webview.src);
+  if (goBtn && urlInput) {
+    goBtn.addEventListener('click', () => navigateTo(urlInput.value));
+  }
+  if (urlInput) {
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') navigateTo(urlInput.value);
+    });
+  }
+  if (chatSend && chatInput) {
+    chatSend.addEventListener('click', () => {
+      const v = chatInput.value.trim();
+      if (v) runCommand(v);
+      chatInput.value = '';
+    });
+  }
+  if (chatInput) {
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const v = chatInput.value.trim();
+        if (v) runCommand(v);
+        chatInput.value = '';
+      }
+    });
+  }
+}
+
+// ===================================================================
+// ACCESSIBILITY AND UX
 // ===================================================================
 document.addEventListener('keydown', (e) => {
-  // Ctrl/Cmd+L to focus address bar
   const isMeta = navigator.platform.toLowerCase().includes('mac') ? e.metaKey : e.ctrlKey;
   if (isMeta && e.key.toLowerCase() === 'l') {
     e.preventDefault();
@@ -264,7 +330,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// When the webview URL changes externally, keep input in sync where possible
 window.addEventListener('hashchange', () => {
   try {
     if (urlInput && webview?.src) urlInput.value = webview.src;
@@ -272,40 +337,15 @@ window.addEventListener('hashchange', () => {
 });
 
 // ===================================================================
-// STUBS FOR FUTURE AI-AGENT BEHAVIORS (COMMENTED; NO-OP TODAY)
-// ===================================================================
-// agentClick(selector):
-//   - In future milestones, the assistant will parse a command like
-//     "Click the Login button" into a DOM selector and execute within
-//     the active webview via preload/IPC to avoid cross-origin issues.
-//   - Security: will sandbox and restrict actions; require user consent.
-// agentScrape(selector):
-//   - Extract text/attributes from elements matched by selector within
-//     the webview DOM; stream results to chat.
-// agentMultiStep(plan):
-//   - Execute sequences: navigate, waitFor, click, type, scrape; with
-//     retries, timeouts, and clear user-visible summaries.
-// historyPersistence:
-//   - Persist visited URLs per tab and restore session state on launch.
-// toolUse:
-//   - Integrate model call and tools (search, open, click) with a planner.
-
-// ===================================================================
-// INITIALIZATION
+// INIT
 // ===================================================================
 (function init() {
-  // Default home if provided via data-home attribute
+  wireUI();
   const home = webview?.getAttribute?.('data-home');
-  if (home && !webview.src) {
-    navigateTo(home);
-  }
-
-  // Optional: click on active tab to enforce initial state
-  if (tabItems && tabItems.length) {
+  if (home && !webview.src) navigateTo(home);
+  if (tabItems?.length) {
     const active = document.querySelector('.tab-item.active');
     active?.dispatchEvent(new Event('click'));
   }
-
-  // Keep nav buttons reasonably updated initially
   updateNavButtons();
 })();
