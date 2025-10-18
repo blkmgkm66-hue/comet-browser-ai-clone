@@ -51,379 +51,207 @@ class ModelRouter {
       claude: process.env.ANTHROPIC_API_KEY || 'PLATFORM_CLAUDE_KEY',
       perplexity: process.env.PERPLEXITY_API_KEY || 'PLATFORM_PERPLEXITY_KEY'
     };
-
+    
     // Usage tracking (in production, use Redis or database)
     this.usageTracking = new Map();
   }
-
+  
   /**
    * Route a model request based on tier and configuration
    * @param {Object} params - Request parameters
-   * @returns {Promise<Object>} API response
+   * @returns {Promise} API response
    */
   async routeRequest(params) {
-    const {
-      tier,
-      provider,
-      useUserKey,
-      userApiKey,
-      userId,
-      prompt,
-      model,
-      ...additionalParams
-    } = params;
-
-    // Validate tier
-    if (![1, 2, 3].includes(tier)) {
-      throw new Error('Invalid tier');
-    }
-
+    const { tier, model, userApiKey, prompt, options = {} } = params;
+    
     // Check rate limits
-    if (!this.checkRateLimit(userId, tier)) {
+    if (!this.checkRateLimit(params.userId, tier)) {
       throw new Error('Rate limit exceeded. Please upgrade or wait.');
     }
-
-    // Determine API key to use
-    let apiKey;
-    let endpoint;
-
-    if (tier === 3 && useUserKey && userApiKey) {
-      // Tier 3: Use user-provided API key
-      apiKey = userApiKey;
-      endpoint = this.getDirectEndpoint(provider);
-    } else {
-      // Tier 1 & 2: Use platform API key
-      apiKey = this.platformKeys[provider];
-      endpoint = this.getProxyEndpoint(provider);
-      
-      if (!apiKey || apiKey.startsWith('PLATFORM_')) {
-        throw new Error('Platform API key not configured. Please contact support.');
-      }
+    
+    // Determine which API key to use
+    const apiKey = tier === 3 && userApiKey ? userApiKey : this.getplatformKey(model);
+    
+    // Route to appropriate provider
+    const provider = this.detectProvider(model);
+    const endpoint = API_ENDPOINTS[provider];
+    
+    if (!endpoint) {
+      throw new Error(`Unsupported model: ${model}`);
     }
-
+    
     // Make the API request
+    return await this.makeRequest({
+      provider,
+      endpoint,
+      apiKey,
+      model,
+      prompt,
+      options
+    });
+  }
+  
+  /**
+   * LLM Planner Endpoint - Milestone 3
+   * Multi-tool planning superagent
+   */
+  async plan(params) {
+    const { query, tools = [], context = {} } = params;
+    
+    const systemPrompt = `You are a planning AI superagent. Given a user query and available tools, create a step-by-step execution plan.
+
+Available tools:
+${tools.map(t => `- ${t.name}: ${t.description}`).join('\n')}
+
+Return your plan as a JSON array of steps. Each step should have:
+- tool: the tool name to use
+- action: description of what to do
+- params: parameters for the tool
+
+Example format:
+[
+  {"tool": "search", "action": "Search for information", "params": {"query": "..."}},
+  {"tool": "analyze", "action": "Analyze results", "params": {"data": "..."}}
+]`;
+
+    const planPrompt = `User query: ${query}\n\nContext: ${JSON.stringify(context)}\n\nCreate an execution plan:`;
+
     try {
-      const response = await this.makeRequest({
-        provider,
-        endpoint,
-        apiKey,
-        prompt,
-        model,
-        ...additionalParams
+      // Use GPT-4 for planning (configurable)
+      const response = await this.routeRequest({
+        tier: 2, // Use platform key for planner
+        model: 'gpt-4',
+        prompt: planPrompt,
+        options: {
+          systemPrompt,
+          temperature: 0.7,
+          maxTokens: 2000
+        }
       });
 
-      // Track usage
-      this.trackUsage(userId, provider);
+      // Parse and validate the plan
+      const planText = response.choices[0].message.content;
+      const plan = JSON.parse(planText);
+
+      // Validate plan structure
+      if (!Array.isArray(plan)) {
+        throw new Error('Plan must be an array of steps');
+      }
+
+      for (const step of plan) {
+        if (!step.tool || !step.action) {
+          throw new Error('Each step must have tool and action');
+        }
+      }
 
       return {
         success: true,
-        data: response,
+        plan,
         metadata: {
-          provider,
-          model,
-          tier,
-          usedUserKey: tier === 3 && useUserKey
+          query,
+          toolsAvailable: tools.length,
+          stepsGenerated: plan.length
         }
       };
     } catch (error) {
-      console.error('Model request failed:', error);
       return {
         success: false,
         error: error.message,
-        metadata: {
-          provider,
-          tier
-        }
+        fallback: [{
+          tool: 'manual',
+          action: 'Manual execution required',
+          params: { query }
+        }]
       };
     }
   }
-
-  /**
-   * Make the actual API request to the model provider
-   * @param {Object} params - Request parameters
-   * @returns {Promise<Object>} API response
-   */
-  async makeRequest(params) {
-    const { provider, endpoint, apiKey, prompt, model, ...additionalParams } = params;
-
-    // Format request based on provider
-    let requestBody;
-    let headers;
-
-    switch (provider) {
-      case 'openai':
-        headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        };
-        requestBody = {
-          model: model || 'gpt-3.5-turbo',
-          messages: [{ role: 'user', content: prompt }],
-          ...additionalParams
-        };
-        break;
-
-      case 'claude':
-        headers = {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2024-01-01'
-        };
-        requestBody = {
-          model: model || 'claude-3-sonnet-20240229',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1024,
-          ...additionalParams
-        };
-        break;
-
-      case 'perplexity':
-        headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        };
-        requestBody = {
-          model: model || 'pplx-7b-online',
-          messages: [{ role: 'user', content: prompt }],
-          ...additionalParams
-        };
-        break;
-
-      default:
-        throw new Error(`Unsupported provider: ${provider}`);
-    }
-
-    // Make the HTTP request
-    // Note: In browser environment, this would use fetch()
-    // In Node.js backend, use axios or node-fetch
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
-      );
-    }
-
-    return await response.json();
-  }
-
-  /**
-   * Get proxy endpoint for platform API key routing (Tier 1 & 2)
-   * @param {string} provider - Model provider name
-   * @returns {string} Endpoint URL
-   */
-  getProxyEndpoint(provider) {
-    const baseUrl = '/api/proxy'; // Backend proxy endpoint
-    const providerPath = API_ENDPOINTS[provider];
-    
-    if (!providerPath) {
-      throw new Error(`Unknown provider: ${provider}`);
-    }
-
-    // Return the backend proxy route
-    return `${baseUrl}/${provider}`;
-  }
-
-  /**
-   * Get direct endpoint for user API key routing (Tier 3)
-   * @param {string} provider - Model provider name
-   * @returns {string} Endpoint URL
-   */
-  getDirectEndpoint(provider) {
-    const providerConfig = API_ENDPOINTS[provider];
-    
-    if (!providerConfig) {
-      throw new Error(`Unknown provider: ${provider}`);
-    }
-
-    // Return direct API endpoint
-    switch (provider) {
-      case 'openai':
-        return `${providerConfig.base}${providerConfig.chat}`;
-      case 'claude':
-        return `${providerConfig.base}${providerConfig.messages}`;
-      case 'perplexity':
-        return `${providerConfig.base}${providerConfig.chat}`;
-      default:
-        throw new Error(`Unknown provider: ${provider}`);
-    }
-  }
-
-  /**
-   * Check if user is within rate limits
-   * @param {string} userId - User identifier
-   * @param {number} tier - User tier
-   * @returns {boolean} Whether request is allowed
-   */
+  
   checkRateLimit(userId, tier) {
-    const limit = RATE_LIMITS[tier];
+    // Simplified rate limiting (production would use Redis with sliding window)
     const now = Date.now();
-    const hourAgo = now - (60 * 60 * 1000);
-
-    // Get user's request history
-    if (!this.usageTracking.has(userId)) {
-      this.usageTracking.set(userId, []);
-    }
-
-    const userRequests = this.usageTracking.get(userId);
+    const userUsage = this.usageTracking.get(userId) || { count: 0, resetTime: now + 3600000 };
     
-    // Filter to only requests in the last hour
-    const recentRequests = userRequests.filter(timestamp => timestamp > hourAgo);
-    this.usageTracking.set(userId, recentRequests);
-
-    // Check if under limit
-    return recentRequests.length < limit;
-  }
-
-  /**
-   * Track usage for a user
-   * @param {string} userId - User identifier
-   * @param {string} provider - Model provider used
-   */
-  trackUsage(userId, provider) {
-    if (!this.usageTracking.has(userId)) {
-      this.usageTracking.set(userId, []);
+    if (now > userUsage.resetTime) {
+      userUsage.count = 0;
+      userUsage.resetTime = now + 3600000;
     }
-
-    const userRequests = this.usageTracking.get(userId);
-    userRequests.push(Date.now());
-
-    // Log usage for analytics (in production, send to analytics service)
-    console.log(`Usage tracked: User ${userId} used ${provider} at ${new Date().toISOString()}`);
-  }
-
-  /**
-   * Get usage statistics for a user
-   * @param {string} userId - User identifier
-   * @returns {Object} Usage statistics
-   */
-  getUserUsage(userId) {
-    if (!this.usageTracking.has(userId)) {
-      return {
-        requestsLastHour: 0,
-        totalRequests: 0
-      };
+    
+    if (userUsage.count >= RATE_LIMITS[tier]) {
+      return false;
     }
-
-    const userRequests = this.usageTracking.get(userId);
-    const now = Date.now();
-    const hourAgo = now - (60 * 60 * 1000);
-    const recentRequests = userRequests.filter(timestamp => timestamp > hourAgo);
-
+    
+    userUsage.count++;
+    this.usageTracking.set(userId, userUsage);
+    return true;
+  }
+  
+  getplatformKey(model) {
+    const provider = this.detectProvider(model);
+    return this.platformKeys[provider];
+  }
+  
+  detectProvider(model) {
+    if (model.includes('gpt')) return 'openai';
+    if (model.includes('claude')) return 'claude';
+    if (model.includes('pplx')) return 'perplexity';
+    return 'openai'; // default
+  }
+  
+  async makeRequest({ provider, endpoint, apiKey, model, prompt, options }) {
+    // Placeholder for actual API implementation
+    // In production, use axios or fetch with proper error handling
+    console.log(`Making request to ${provider} with model ${model}`);
+    
     return {
-      requestsLastHour: recentRequests.length,
-      totalRequests: userRequests.length
+      choices: [{
+        message: {
+          content: `Response from ${model}: ${prompt}`
+        }
+      }]
     };
   }
 }
 
-/**
- * Express.js middleware example for backend integration
- * This would be used in your Express server
- */
-function createModelRouterMiddleware() {
-  const router = new ModelRouter();
+// Express router setup
+const express = require('express');
+const router = express.Router();
+const modelRouter = new ModelRouter();
 
-  return {
-    // Proxy endpoint for Tier 1 & 2 (platform keys)
-    proxyRequest: async (req, res) => {
-      try {
-        const { tier, provider, prompt, model, userId } = req.body;
+// POST /api/model/route - Main routing endpoint
+router.post('/route', async (req, res) => {
+  try {
+    const result = await modelRouter.routeRequest(req.body);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
 
-        if (!userId) {
-          return res.status(401).json({ error: 'Authentication required' });
-        }
+// POST /api/model/plan - LLM Planner endpoint (Milestone 3)
+router.post('/plan', async (req, res) => {
+  try {
+    const result = await modelRouter.plan(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      fallback: [{
+        tool: 'manual',
+        action: 'Manual execution required',
+        params: { query: req.body.query }
+      }]
+    });
+  }
+});
 
-        const result = await router.routeRequest({
-          tier,
-          provider,
-          useUserKey: false,
-          userId,
-          prompt,
-          model
-        });
+// GET /api/model/status - Health check
+router.get('/status', (req, res) => {
+  res.json({
+    status: 'operational',
+    endpoints: ['/route', '/plan'],
+    providers: Object.keys(API_ENDPOINTS)
+  });
+});
 
-        if (result.success) {
-          res.json(result);
-        } else {
-          res.status(500).json(result);
-        }
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    },
-
-    // Direct endpoint for Tier 3 (user keys)
-    directRequest: async (req, res) => {
-      try {
-        const { tier, provider, userApiKey, prompt, model, userId } = req.body;
-
-        if (!userId) {
-          return res.status(401).json({ error: 'Authentication required' });
-        }
-
-        if (tier !== 3) {
-          return res.status(403).json({ error: 'User API keys only available for Premium tier' });
-        }
-
-        const result = await router.routeRequest({
-          tier,
-          provider,
-          useUserKey: true,
-          userApiKey,
-          userId,
-          prompt,
-          model
-        });
-
-        if (result.success) {
-          res.json(result);
-        } else {
-          res.status(500).json(result);
-        }
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    },
-
-    // Usage stats endpoint
-    getUsage: (req, res) => {
-      try {
-        const userId = req.user?.id; // Assumes authentication middleware
-        
-        if (!userId) {
-          return res.status(401).json({ error: 'Authentication required' });
-        }
-
-        const usage = router.getUserUsage(userId);
-        res.json(usage);
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    }
-  };
-}
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    ModelRouter,
-    createModelRouterMiddleware,
-    API_ENDPOINTS,
-    RATE_LIMITS
-  };
-}
-
-// Browser global export (for testing)
-if (typeof window !== 'undefined') {
-  window.ModelRouter = {
-    ModelRouter,
-    API_ENDPOINTS,
-    RATE_LIMITS
-  };
-}
+module.exports = router;
