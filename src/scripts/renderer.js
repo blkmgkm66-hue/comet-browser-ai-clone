@@ -6,27 +6,65 @@
  * - Async plan POST to /api/model/plan
  * - Plan execution loop
  * - Tool execution shell (extensible framework)
+ * - DOMContentLoaded wrapper for robust initialization
+ * - Defensive element presence checks
  */
 
 // ===================================================================
-// DOM ELEMENT REFERENCES
+// DOM ELEMENT REFERENCES & INITIALIZATION
 // ===================================================================
-const webview = document.getElementById('browser-webview');
-const urlInput = document.getElementById('url-input');
-const goBtn = document.getElementById('go-btn');
-const backBtn = document.getElementById('back-btn');
-const forwardBtn = document.getElementById('forward-btn');
-const refreshBtn = document.getElementById('refresh-btn');
-const chatInput = document.getElementById('chat-input');
-const chatSend = document.getElementById('chat-send');
-const chatMessages = document.getElementById('chat-messages');
-const tabItems = document.querySelectorAll('.tab-item');
+
+// Declare element references at module scope
+let webview, urlInput, goBtn, backBtn, forwardBtn, refreshBtn;
+let chatInput, chatSend, chatMessages, tabItems;
+let assistantPanel, assistantToggle;
+
+// Wrap all DOM initialization in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('[Renderer] DOMContentLoaded fired - initializing elements...');
+  
+  // Assign all DOM elements
+  webview = document.getElementById('browser-webview');
+  urlInput = document.getElementById('url-input');
+  goBtn = document.getElementById('go-btn');
+  backBtn = document.getElementById('back-btn');
+  forwardBtn = document.getElementById('forward-btn');
+  refreshBtn = document.getElementById('refresh-btn');
+  chatInput = document.getElementById('chat-input');
+  chatSend = document.getElementById('chat-send');
+  chatMessages = document.getElementById('chat-messages');
+  assistantPanel = document.getElementById('assistant-panel');
+  assistantToggle = document.getElementById('assistant-toggle');
+  tabItems = document.querySelectorAll('.tab-item');
+  
+  // Defensive logging for critical elements
+  if (!webview) console.warn('[Renderer] CRITICAL: webview element not found!');
+  if (!urlInput) console.warn('[Renderer] WARNING: urlInput element not found!');
+  if (!goBtn) console.warn('[Renderer] WARNING: goBtn element not found!');
+  if (!backBtn) console.warn('[Renderer] WARNING: backBtn element not found!');
+  if (!forwardBtn) console.warn('[Renderer] WARNING: forwardBtn element not found!');
+  if (!refreshBtn) console.warn('[Renderer] WARNING: refreshBtn element not found!');
+  if (!chatInput) console.warn('[Renderer] WARNING: chatInput element not found!');
+  if (!chatSend) console.warn('[Renderer] WARNING: chatSend element not found!');
+  if (!chatMessages) console.warn('[Renderer] WARNING: chatMessages element not found!');
+  if (!assistantPanel) console.warn('[Renderer] WARNING: assistantPanel element not found!');
+  if (!assistantToggle) console.warn('[Renderer] WARNING: assistantToggle element not found!');
+  
+  // Wire up UI and initialize features
+  wireUI();
+  init();
+  
+  console.log('[Renderer] Initialization complete');
+});
 
 // ===================================================================
 // NAVIGATION HELPERS
 // ===================================================================
 function navigateTo(rawUrl) {
-  if (!webview) return;
+  if (!webview) {
+    console.warn('[Renderer] navigateTo: webview not available');
+    return;
+  }
   let url = rawUrl.trim();
   if (!url) return;
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
@@ -41,17 +79,9 @@ function updateNavButtons() {
   if (forwardBtn) forwardBtn.disabled = !webview.canGoForward();
 }
 
-if (webview) {
-  webview.addEventListener('did-start-loading', () => {
-    if (urlInput) urlInput.value = webview.getURL();
-  });
-  webview.addEventListener('did-stop-loading', updateNavButtons);
-}
-
 // ===================================================================
 // AI SUPERAGENT - MILESTONE 3: LLM PLANNER & EXECUTOR
 // ===================================================================
-
 /**
  * Available tools registry
  * Each tool has: name, description, params schema, and execute function
@@ -60,302 +90,222 @@ const AVAILABLE_TOOLS = [
   {
     name: 'search',
     description: 'Search the web for information',
-    params: { query: 'string' },
-    execute: async (params) => {
-      return { status: 'success', data: `Search results for: ${params.query}` };
+    params: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+    async execute({ query }) {
+      navigateTo(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      return { status: 'search_started', query };
     }
   },
   {
     name: 'navigate',
-    description: 'Navigate browser to a URL',
-    params: { url: 'string' },
-    execute: async (params) => {
-      navigateTo(params.url);
-      return { status: 'success', data: `Navigated to ${params.url}` };
+    description: 'Navigate to a specific URL',
+    params: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] },
+    async execute({ url }) {
+      navigateTo(url);
+      return { status: 'navigated', url };
     }
   },
   {
-    name: 'analyze',
-    description: 'Analyze page content',
-    params: { selector: 'string?' },
-    execute: async (params) => {
-      return { status: 'success', data: 'Content analysis complete' };
-    }
-  },
-  {
-    name: 'extract',
-    description: 'Extract data from current page',
-    params: { fields: 'array' },
-    execute: async (params) => {
-      return { status: 'success', data: { extracted: params.fields } };
+    name: 'get_page_content',
+    description: 'Extract text content from the current page',
+    params: { type: 'object', properties: {} },
+    async execute() {
+      if (!webview) return { error: 'Webview not available' };
+      try {
+        const content = await webview.executeJavaScript('document.body.innerText');
+        return { status: 'success', content: content.slice(0, 5000) };
+      } catch (err) {
+        return { error: err.message };
+      }
     }
   }
 ];
 
 /**
- * Request a plan from the LLM planner backend
- * @param {string} query - User's natural language query
- * @param {object} context - Additional context (current URL, page state, etc.)
- * @returns {Promise<object>} Plan response with steps array
+ * Execute a single tool by name with provided parameters
  */
-async function requestPlan(query, context = {}) {
+async function executeTool(toolName, params) {
+  const tool = AVAILABLE_TOOLS.find(t => t.name === toolName);
+  if (!tool) {
+    return { error: `Tool "${toolName}" not found` };
+  }
   try {
-    addChatMessage('system', `🤖 Planning: "${query}"...`);
+    return await tool.execute(params);
+  } catch (err) {
+    return { error: err.message };
+  }
+}
 
-    const response = await fetch('http://localhost:3000/api/model/plan', {
+/**
+ * Send user prompt to /api/model/plan, get back a list of steps
+ */
+async function fetchPlan(userPrompt) {
+  try {
+    const resp = await fetch('http://localhost:3000/api/model/plan', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query,
-        tools: AVAILABLE_TOOLS.map(t => ({
-          name: t.name,
-          description: t.description,
-          params: t.params
-        })),
-        context: {
-          ...context,
-          currentUrl: webview?.getURL?.() || '',
-          timestamp: new Date().toISOString()
-        }
+        prompt: userPrompt,
+        tools: AVAILABLE_TOOLS.map(t => ({ name: t.name, description: t.description, params: t.params }))
       })
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    
-    if (result.success) {
-      addChatMessage('system', `✅ Plan created: ${result.plan.length} steps`);
-      return result;
-    } else {
-      addChatMessage('error', `⚠️ Planning failed: ${result.error}`);
-      return result;
-    }
-  } catch (error) {
-    addChatMessage('error', `❌ Plan request failed: ${error.message}`);
-    return {
-      success: false,
-      error: error.message,
-      fallback: [{
-        tool: 'manual',
-        action: 'Manual execution required',
-        params: { query }
-      }]
-    };
+    if (!resp.ok) throw new Error(`Plan API error: ${resp.status}`);
+    const data = await resp.json();
+    return data.steps || [];
+  } catch (err) {
+    console.error('[Renderer] fetchPlan error:', err);
+    return [];
   }
 }
 
 /**
- * Execute a single tool from the plan
- * @param {object} step - Plan step with tool, action, params
- * @returns {Promise<object>} Tool execution result
+ * Execute each step in the plan sequentially
  */
-async function executeTool(step) {
-  const { tool, action, params } = step;
-  
-  addChatMessage('system', `🔧 Executing: ${action}`);
-  
-  try {
-    // Find the tool in registry
-    const toolDefinition = AVAILABLE_TOOLS.find(t => t.name === tool);
-    
-    if (!toolDefinition) {
-      throw new Error(`Unknown tool: ${tool}`);
-    }
-    
-    // Execute the tool
-    const result = await toolDefinition.execute(params);
-    
-    addChatMessage('system', `✓ ${action} completed`);
-    
-    return {
-      success: true,
-      tool,
-      action,
-      result
-    };
-  } catch (error) {
-    addChatMessage('error', `✗ ${action} failed: ${error.message}`);
-    
-    return {
-      success: false,
-      tool,
-      action,
-      error: error.message
-    };
-  }
-}
-
-/**
- * Execute a complete plan from the LLM planner
- * @param {array} plan - Array of plan steps
- * @returns {Promise<array>} Array of execution results
- */
-async function executePlan(plan) {
+async function executePlan(steps) {
   const results = [];
-  
-  addChatMessage('system', `🚀 Executing plan with ${plan.length} steps...`);
-  
-  for (let i = 0; i < plan.length; i++) {
-    const step = plan[i];
-    addChatMessage('system', `Step ${i + 1}/${plan.length}: ${step.action}`);
-    
-    const result = await executeTool(step);
+  for (const step of steps) {
+    appendMessage('assistant', `Executing: ${step.tool} with ${JSON.stringify(step.params)}`);
+    const result = await executeTool(step.tool, step.params);
     results.push(result);
-    
-    // If a step fails, decide whether to continue or stop
-    if (!result.success) {
-      addChatMessage('warning', `⚠️ Step ${i + 1} failed, continuing...`);
-      // Could add logic here to stop on critical failures
-    }
-    
-    // Small delay between steps for UX
-    await new Promise(resolve => setTimeout(resolve, 300));
+    appendMessage('assistant', `Result: ${JSON.stringify(result)}`);
   }
-  
-  addChatMessage('system', `✅ Plan execution complete: ${results.filter(r => r.success).length}/${results.length} successful`);
-  
   return results;
 }
 
 /**
- * Main command handler for superagent queries
- * Routes between direct commands and LLM-planned actions
+ * Main handler when user clicks "Send" in assistant chat
  */
-async function runCommand(cmd) {
-  const trimmed = cmd.trim().toLowerCase();
-  
-  // Direct command shortcuts (bypass planner)
-  if (trimmed.startsWith('go ') || trimmed.startsWith('nav ')) {
-    const url = cmd.slice(trimmed.indexOf(' ') + 1);
-    navigateTo(url);
-    addChatMessage('user', cmd);
-    addChatMessage('assistant', `Navigating to ${url}`);
+async function handleSendMessage() {
+  if (!chatInput || !chatMessages) {
+    console.warn('[Renderer] handleSendMessage: chat elements not available');
     return;
   }
   
-  // LLM Superagent mode (default)
-  addChatMessage('user', cmd);
+  const userMsg = chatInput.value.trim();
+  if (!userMsg) return;
   
-  try {
-    // Step 1: Request plan from backend
-    const planResponse = await requestPlan(cmd, {
-      userIntent: 'web_automation',
-      browserState: 'ready'
-    });
-    
-    if (!planResponse.success) {
-      addChatMessage('assistant', 'I couldn\'t create a plan for that. Try rephrasing?');
-      return;
-    }
-    
-    // Step 2: Execute the plan
-    const results = await executePlan(planResponse.plan);
-    
-    // Step 3: Summarize results
-    const successCount = results.filter(r => r.success).length;
-    const summary = `Completed ${successCount}/${results.length} actions successfully.`;
-    addChatMessage('assistant', summary);
-  } catch (error) {
-    addChatMessage('error', `Command execution failed: ${error.message}`);
+  appendMessage('user', userMsg);
+  chatInput.value = '';
+  
+  // Show thinking indicator
+  appendMessage('assistant', 'Thinking...');
+  
+  // 1) Get plan from LLM
+  const steps = await fetchPlan(userMsg);
+  
+  // 2) Execute plan
+  if (steps.length > 0) {
+    await executePlan(steps);
+    appendMessage('assistant', 'Done!');
+  } else {
+    appendMessage('assistant', 'No plan generated. Please try a different prompt.');
   }
 }
 
-// ===================================================================
-// CHAT MESSAGE RENDERING
-// ===================================================================
-function addChatMessage(role, text) {
+function appendMessage(role, text) {
   if (!chatMessages) return;
-  const msg = document.createElement('div');
-  msg.className = `chat-message chat-${role}`;
-  msg.textContent = text;
-  chatMessages.appendChild(msg);
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('message', role === 'user' ? 'user-message' : 'assistant-message');
+  msgDiv.textContent = `[${role}] ${text}`;
+  chatMessages.appendChild(msgDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 // ===================================================================
-// TAB SWITCHING
-// ===================================================================
-if (tabItems) {
-  tabItems.forEach((item) => {
-    item.addEventListener('click', () => {
-      const target = item.getAttribute('data-tab');
-      if (!target) return;
-      document.querySelectorAll('.tab-item').forEach((t) => t.classList.remove('active'));
-      item.classList.add('active');
-      document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
-      const panel = document.getElementById(`${target}-panel`);
-      if (panel) panel.classList.add('active');
-    });
-  });
-}
-
-// ===================================================================
-// UI EVENT WIRING
+// WIRE UP UI EVENTS
 // ===================================================================
 function wireUI() {
-  if (backBtn) backBtn.addEventListener('click', () => window.history.back());
-  if (forwardBtn) forwardBtn.addEventListener('click', () => window.history.forward());
-  if (refreshBtn && webview) refreshBtn.addEventListener('click', () => webview.src = webview.src);
+  console.log('[Renderer] wireUI called');
+  
+  // Navigation buttons
   if (goBtn && urlInput) {
     goBtn.addEventListener('click', () => navigateTo(urlInput.value));
+  } else {
+    console.warn('[Renderer] wireUI: goBtn or urlInput not available for navigation');
   }
+  
   if (urlInput) {
     urlInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') navigateTo(urlInput.value);
     });
   }
-  if (chatSend && chatInput) {
-    chatSend.addEventListener('click', () => {
-      const v = chatInput.value.trim();
-      if (v) runCommand(v);
-      chatInput.value = '';
+  
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      if (webview) webview.goBack();
     });
   }
+  
+  if (forwardBtn) {
+    forwardBtn.addEventListener('click', () => {
+      if (webview) webview.goForward();
+    });
+  }
+  
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      if (webview) webview.reload();
+    });
+  }
+  
+  // Assistant chat
+  if (chatSend) {
+    chatSend.addEventListener('click', handleSendMessage);
+  } else {
+    console.warn('[Renderer] wireUI: chatSend button not available');
+  }
+  
   if (chatInput) {
     chatInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        const v = chatInput.value.trim();
-        if (v) runCommand(v);
-        chatInput.value = '';
-      }
+      if (e.key === 'Enter') handleSendMessage();
+    });
+  }
+  
+  // Assistant toggle
+  if (assistantToggle && assistantPanel) {
+    assistantToggle.addEventListener('click', () => {
+      assistantPanel.classList.toggle('hidden');
+    });
+  } else {
+    console.warn('[Renderer] wireUI: assistantToggle or assistantPanel not available');
+  }
+  
+  // Webview event listeners
+  if (webview) {
+    webview.addEventListener('did-start-loading', () => {
+      if (urlInput) urlInput.value = webview.getURL();
+    });
+    webview.addEventListener('did-stop-loading', updateNavButtons);
+  } else {
+    console.warn('[Renderer] wireUI: webview not available for event listeners');
+  }
+  
+  // Tab switching
+  if (tabItems && tabItems.length > 0) {
+    tabItems.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabItems.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
     });
   }
 }
 
 // ===================================================================
-// ACCESSIBILITY AND UX
+// INITIALIZATION
 // ===================================================================
-document.addEventListener('keydown', (e) => {
-  const isMeta = navigator.platform.toLowerCase().includes('mac') ? e.metaKey : e.ctrlKey;
-  if (isMeta && e.key.toLowerCase() === 'l') {
-    e.preventDefault();
-    urlInput?.focus();
-    urlInput?.select?.();
+function init() {
+  console.log('[Renderer] init called');
+  
+  // Only initialize if critical elements are present
+  if (!webview) {
+    console.error('[Renderer] init: Cannot initialize without webview element');
+    return;
   }
-});
-
-window.addEventListener('hashchange', () => {
-  try {
-    if (urlInput && webview?.src) urlInput.value = webview.src;
-  } catch {}
-});
-
-// ===================================================================
-// INIT
-// ===================================================================
-(function init() {
-  wireUI();
-  const home = webview?.getAttribute?.('data-home');
-  if (home && !webview.src) navigateTo(home);
-  if (tabItems?.length) {
-    const active = document.querySelector('.tab-item.active');
-    active?.dispatchEvent(new Event('click'));
-  }
-  updateNavButtons();
-})();
+  
+  // Load default page
+  navigateTo('https://www.google.com');
+  
+  // Additional initialization logic here
+  console.log('[Renderer] init: Default page loaded');
+}
