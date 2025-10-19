@@ -8,17 +8,63 @@
  * - Tool execution shell (extensible framework)
  * - DOMContentLoaded wrapper for robust initialization
  * - Defensive element presence checks
+ * - DOM startup validator for core UI stability
  */
+
 // ===================================================================
 // DOM ELEMENT REFERENCES & INITIALIZATION
 // ===================================================================
+
 // Declare element references at module scope
 let webview, urlInput, goBtn, backBtn, forwardBtn, refreshBtn;
 let chatInput, chatSend, chatMessages, tabItems;
 let assistantPanel, assistantToggle;
+
+// ===================================================================
+// DOM STARTUP VALIDATOR
+// ===================================================================
+
+/**
+ * Validates that all critical DOM elements are present at startup.
+ * If any are missing, alerts the user and throws an error to prevent
+ * the UI from running in a broken state.
+ */
+function validateCriticalElements() {
+  const criticalIds = [
+    'webview',
+    'url-input',
+    'go-btn',
+    'back-btn',
+    'forward-btn',
+    'refresh-btn',
+    'assistant-panel',
+    'assistant-toggle',
+    'chat-input',
+    'chat-send',
+    'chat-messages'
+  ];
+
+  const missing = [];
+  
+  for (const id of criticalIds) {
+    if (!document.getElementById(id)) {
+      missing.push(id);
+    }
+  }
+
+  if (missing.length > 0) {
+    const errorMsg = `CRITICAL ERROR: Missing required DOM elements: ${missing.join(', ')}`;
+    alert(errorMsg);
+    throw new Error(errorMsg);
+  }
+}
+
 // Wrap all DOM initialization in DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[Renderer] DOMContentLoaded fired - initializing elements...');
+  
+  // Validate critical elements first
+  validateCriticalElements();
   
   // Assign all DOM elements
   webview = document.getElementById('webview');
@@ -53,187 +99,85 @@ document.addEventListener('DOMContentLoaded', () => {
   
   console.log('[Renderer] Initialization complete');
 });
+
 // ===================================================================
 // NAVIGATION HELPERS
 // ===================================================================
+
 function navigateTo(rawUrl) {
   if (!webview) {
-    console.warn('[Renderer] navigateTo: webview not available');
+    console.error('[Renderer] navigateTo: webview not available');
     return;
   }
+  
   let url = rawUrl.trim();
-  if (!url) return;
-  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  
+  // If no protocol, add https://
+  if (!/^https?:\/\//i.test(url)) {
+    url = 'https://' + url;
+  }
+  
+  console.log('[Renderer] Navigating to:', url);
   webview.src = url;
-  if (urlInput) urlInput.value = url;
-  updateNavButtons();
 }
+
 function updateNavButtons() {
-  if (!webview) return;
+  if (!webview) {
+    console.warn('[Renderer] updateNavButtons: webview not available');
+    return;
+  }
+  
   if (backBtn) backBtn.disabled = !webview.canGoBack();
   if (forwardBtn) forwardBtn.disabled = !webview.canGoForward();
 }
+
 // ===================================================================
-// AI SUPERAGENT - MILESTONE 3: LLM PLANNER & EXECUTOR
+// UI WIRING
 // ===================================================================
-/**
- * Available tools registry
- * Each tool has: name, description, params schema, and execute function
- */
-const AVAILABLE_TOOLS = [
-  {
-    name: 'search',
-    description: 'Search the web for information',
-    params: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
-    async execute({ query }) {
-      navigateTo(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
-      return { status: 'search_started', query };
-    }
-  },
-  {
-    name: 'navigate',
-    description: 'Navigate to a specific URL',
-    params: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] },
-    async execute({ url }) {
-      navigateTo(url);
-      return { status: 'navigated', url };
-    }
-  },
-  {
-    name: 'get_page_content',
-    description: 'Extract text content from the current page',
-    params: { type: 'object', properties: {} },
-    async execute() {
-      if (!webview) return { error: 'Webview not available' };
-      try {
-        const content = await webview.executeJavaScript('document.body.innerText');
-        return { status: 'success', content: content.slice(0, 5000) };
-      } catch (err) {
-        return { error: err.message };
-      }
-    }
-  }
-];
-/**
- * Execute a single tool by name with provided parameters
- */
-async function executeTool(toolName, params) {
-  const tool = AVAILABLE_TOOLS.find(t => t.name === toolName);
-  if (!tool) {
-    return { error: `Tool "${toolName}" not found` };
-  }
-  try {
-    return await tool.execute(params);
-  } catch (err) {
-    return { error: err.message };
-  }
-}
-/**
- * Send user prompt to /api/model/plan, get back a list of steps
- */
-async function fetchPlan(userPrompt) {
-  try {
-    const resp = await fetch('http://localhost:3000/api/model/plan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: userPrompt,
-        tools: AVAILABLE_TOOLS.map(t => ({ name: t.name, description: t.description, params: t.params }))
-      })
-    });
-    if (!resp.ok) throw new Error(`Plan API error: ${resp.status}`);
-    const data = await resp.json();
-    return data.steps || [];
-  } catch (err) {
-    console.error('[Renderer] fetchPlan error:', err);
-    return [];
-  }
-}
-/**
- * Execute each step in the plan sequentially
- */
-async function executePlan(steps) {
-  const results = [];
-  for (const step of steps) {
-    appendMessage('assistant', `Executing: ${step.tool} with ${JSON.stringify(step.params)}`);
-    const result = await executeTool(step.tool, step.params);
-    results.push(result);
-    appendMessage('assistant', `Result: ${JSON.stringify(result)}`);
-  }
-  return results;
-}
-/**
- * Main handler when user clicks "Send" in assistant chat
- */
-async function handleSendMessage() {
-  if (!chatInput || !chatMessages) {
-    console.warn('[Renderer] handleSendMessage: chat elements not available');
-    return;
-  }
-  
-  const userMsg = chatInput.value.trim();
-  if (!userMsg) return;
-  
-  appendMessage('user', userMsg);
-  chatInput.value = '';
-  
-  // Show thinking indicator
-  appendMessage('assistant', 'Thinking...');
-  
-  // 1) Get plan from LLM
-  const steps = await fetchPlan(userMsg);
-  
-  // 2) Execute plan
-  if (steps.length > 0) {
-    await executePlan(steps);
-    appendMessage('assistant', 'Done!');
-  } else {
-    appendMessage('assistant', 'No plan generated. Please try a different prompt.');
-  }
-}
-function appendMessage(role, text) {
-  if (!chatMessages) return;
-  const msgDiv = document.createElement('div');
-  msgDiv.classList.add('message', role === 'user' ? 'user-message' : 'assistant-message');
-  msgDiv.textContent = `[${role}] ${text}`;
-  chatMessages.appendChild(msgDiv);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-// ===================================================================
-// WIRE UP UI EVENTS
-// ===================================================================
+
 function wireUI() {
   console.log('[Renderer] wireUI called');
   
   // Navigation buttons
-  if (goBtn && urlInput) {
-    goBtn.addEventListener('click', () => navigateTo(urlInput.value));
-  } else {
-    console.warn('[Renderer] wireUI: goBtn or urlInput not available for navigation');
-  }
-  
-  if (urlInput) {
-    urlInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') navigateTo(urlInput.value);
+  if (goBtn) {
+    goBtn.addEventListener('click', () => {
+      if (urlInput) navigateTo(urlInput.value);
     });
+  } else {
+    console.warn('[Renderer] wireUI: goBtn not available');
   }
   
   if (backBtn) {
     backBtn.addEventListener('click', () => {
-      if (webview) webview.goBack();
+      if (webview && webview.canGoBack()) webview.goBack();
     });
+  } else {
+    console.warn('[Renderer] wireUI: backBtn not available');
   }
   
   if (forwardBtn) {
     forwardBtn.addEventListener('click', () => {
-      if (webview) webview.goForward();
+      if (webview && webview.canGoForward()) webview.goForward();
     });
+  } else {
+    console.warn('[Renderer] wireUI: forwardBtn not available');
   }
   
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
       if (webview) webview.reload();
     });
+  } else {
+    console.warn('[Renderer] wireUI: refreshBtn not available');
+  }
+  
+  // URL input: Enter key navigation
+  if (urlInput) {
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') navigateTo(urlInput.value);
+    });
+  } else {
+    console.warn('[Renderer] wireUI: urlInput not available');
   }
   
   // Assistant chat
@@ -279,9 +223,11 @@ function wireUI() {
     });
   }
 }
+
 // ===================================================================
 // INITIALIZATION
 // ===================================================================
+
 function init() {
   console.log('[Renderer] init called');
   
@@ -296,4 +242,115 @@ function init() {
   
   // Additional initialization logic here
   console.log('[Renderer] init: Default page loaded');
+}
+
+// ===================================================================
+// ASSISTANT MESSAGE HANDLING
+// ===================================================================
+
+function handleSendMessage() {
+  if (!chatInput || !chatMessages) {
+    console.warn('[Renderer] handleSendMessage: Missing chat input or messages container');
+    return;
+  }
+  
+  const userMessage = chatInput.value.trim();
+  if (!userMessage) return;
+  
+  // Display user message
+  appendMessage('user', userMessage);
+  chatInput.value = '';
+  
+  // Send to backend planner
+  fetchPlanAndExecute(userMessage);
+}
+
+function appendMessage(role, content) {
+  if (!chatMessages) {
+    console.warn('[Renderer] appendMessage: chatMessages container not available');
+    return;
+  }
+  
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `message ${role}-message`;
+  msgDiv.textContent = content;
+  chatMessages.appendChild(msgDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// ===================================================================
+// PLANNER INTEGRATION (Milestone 3)
+// ===================================================================
+
+async function fetchPlanAndExecute(userGoal) {
+  try {
+    appendMessage('system', 'Thinking...');
+    
+    // POST to planner
+    const response = await fetch('http://localhost:3000/api/model/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ goal: userGoal })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Planner API error: ${response.status}`);
+    }
+    
+    const plan = await response.json();
+    console.log('[Renderer] Received plan:', plan);
+    
+    // Display plan summary
+    appendMessage('assistant', `Plan: ${plan.steps ? plan.steps.length : 0} steps`);
+    
+    // Execute plan
+    if (plan.steps && Array.isArray(plan.steps)) {
+      for (const step of plan.steps) {
+        await executeStep(step);
+      }
+      appendMessage('assistant', 'Plan complete!');
+    } else {
+      appendMessage('assistant', 'No executable steps in plan.');
+    }
+    
+  } catch (error) {
+    console.error('[Renderer] fetchPlanAndExecute error:', error);
+    appendMessage('error', `Error: ${error.message}`);
+  }
+}
+
+async function executeStep(step) {
+  console.log('[Renderer] Executing step:', step);
+  
+  // Tool execution framework (extensible)
+  const { tool, params } = step;
+  
+  switch (tool) {
+    case 'navigate':
+      if (params && params.url) {
+        appendMessage('system', `Navigating to: ${params.url}`);
+        navigateTo(params.url);
+        // Wait for page load (simplified)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      break;
+      
+    case 'click':
+      if (params && params.selector) {
+        appendMessage('system', `Clicking: ${params.selector}`);
+        // TODO: Implement webview injection for click
+      }
+      break;
+      
+    case 'type':
+      if (params && params.selector && params.text) {
+        appendMessage('system', `Typing into: ${params.selector}`);
+        // TODO: Implement webview injection for typing
+      }
+      break;
+      
+    default:
+      console.warn('[Renderer] Unknown tool:', tool);
+      appendMessage('system', `Unknown tool: ${tool}`);
+  }
 }
