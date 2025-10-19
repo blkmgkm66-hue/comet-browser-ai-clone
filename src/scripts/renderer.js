@@ -9,16 +9,13 @@
  * - DOMContentLoaded wrapper for robust initialization
  * - Defensive element presence checks
  */
-
 // ===================================================================
 // DOM ELEMENT REFERENCES & INITIALIZATION
 // ===================================================================
-
 // Declare element references at module scope
 let webview, urlInput, goBtn, backBtn, forwardBtn, refreshBtn;
 let chatInput, chatSend, chatMessages, tabItems;
 let assistantPanel, assistantToggle;
-
 // Wrap all DOM initialization in DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[Renderer] DOMContentLoaded fired - initializing elements...');
@@ -56,11 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   console.log('[Renderer] Initialization complete');
 });
-
 // ===================================================================
 // NAVIGATION HELPERS
 // ===================================================================
-
 function navigateTo(rawUrl) {
   if (!webview) {
     console.warn('[Renderer] navigateTo: webview not available');
@@ -73,17 +68,14 @@ function navigateTo(rawUrl) {
   if (urlInput) urlInput.value = url;
   updateNavButtons();
 }
-
 function updateNavButtons() {
   if (!webview) return;
   if (backBtn) backBtn.disabled = !webview.canGoBack();
   if (forwardBtn) forwardBtn.disabled = !webview.canGoForward();
 }
-
 // ===================================================================
 // AI SUPERAGENT - MILESTONE 3: LLM PLANNER & EXECUTOR
 // ===================================================================
-
 /**
  * Available tools registry
  * Each tool has: name, description, params schema, and execute function
@@ -122,7 +114,6 @@ const AVAILABLE_TOOLS = [
     }
   }
 ];
-
 /**
  * Execute a single tool by name with provided parameters
  */
@@ -137,7 +128,6 @@ async function executeTool(toolName, params) {
     return { error: err.message };
   }
 }
-
 /**
  * Send user prompt to /api/model/plan, get back a list of steps
  */
@@ -159,7 +149,6 @@ async function fetchPlan(userPrompt) {
     return [];
   }
 }
-
 /**
  * Execute each step in the plan sequentially
  */
@@ -173,7 +162,6 @@ async function executePlan(steps) {
   }
   return results;
 }
-
 /**
  * Main handler when user clicks "Send" in assistant chat
  */
@@ -203,7 +191,6 @@ async function handleSendMessage() {
     appendMessage('assistant', 'No plan generated. Please try a different prompt.');
   }
 }
-
 function appendMessage(role, text) {
   if (!chatMessages) return;
   const msgDiv = document.createElement('div');
@@ -212,11 +199,9 @@ function appendMessage(role, text) {
   chatMessages.appendChild(msgDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
-
 // ===================================================================
 // WIRE UP UI EVENTS
 // ===================================================================
-
 function wireUI() {
   console.log('[Renderer] wireUI called');
   
@@ -267,7 +252,8 @@ function wireUI() {
   // Assistant toggle
   if (assistantToggle && assistantPanel) {
     assistantToggle.addEventListener('click', () => {
-      assistantPanel.classList.toggle('hidden');
+      const isOpen = assistantPanel.classList.toggle('open');
+      assistantToggle.setAttribute('aria-expanded', isOpen.toString());
     });
   } else {
     console.warn('[Renderer] wireUI: assistantToggle or assistantPanel not available');
@@ -293,11 +279,9 @@ function wireUI() {
     });
   }
 }
-
 // ===================================================================
 // INITIALIZATION
 // ===================================================================
-
 function init() {
   console.log('[Renderer] init called');
   
