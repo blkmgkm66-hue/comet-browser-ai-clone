@@ -99,15 +99,12 @@ class ModelRouter {
     const { query, tools = [], context = {} } = params;
     
     const systemPrompt = `You are a planning AI superagent. Given a user query and available tools, create a step-by-step execution plan.
-
 Available tools:
 ${tools.map(t => `- ${t.name}: ${t.description}`).join('\n')}
-
 Return your plan as a JSON array of steps. Each step should have:
 - tool: the tool name to use
 - action: description of what to do
 - params: parameters for the tool
-
 Example format:
 [
   {"tool": "search", "action": "Search for information", "params": {"query": "..."}},
@@ -198,17 +195,60 @@ Example format:
   }
   
   async makeRequest({ provider, endpoint, apiKey, model, prompt, options }) {
-    // Placeholder for actual API implementation
-    // In production, use axios or fetch with proper error handling
-    console.log(`Making request to ${provider} with model ${model}`);
-    
-    return {
-      choices: [{
-        message: {
-          content: `Response from ${model}: ${prompt}`
+    // Only implement OpenAI for now (can be extended for other providers)
+    if (provider === 'openai') {
+      try {
+        const fetch = require('node-fetch');
+        const url = `${endpoint.base}${endpoint.chat}`;
+        
+        // Build the messages array
+        const messages = [];
+        
+        // Add system prompt if provided
+        if (options.systemPrompt) {
+          messages.push({
+            role: 'system',
+            content: options.systemPrompt
+          });
         }
-      }]
-    };
+        
+        // Add user prompt
+        messages.push({
+          role: 'user',
+          content: prompt
+        });
+        
+        // Make the POST request to OpenAI
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            temperature: options.temperature || 0.7,
+            max_tokens: options.maxTokens || 1000
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return data;
+        
+      } catch (error) {
+        console.error('Error making OpenAI request:', error);
+        throw error;
+      }
+    }
+    
+    // Placeholder for other providers
+    throw new Error(`Provider ${provider} not yet implemented`);
   }
 }
 
