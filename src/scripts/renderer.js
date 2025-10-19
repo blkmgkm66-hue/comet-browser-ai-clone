@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('[Renderer] DOMContentLoaded fired - initializing elements...');
   
   // Assign all DOM elements
-  webview = document.getElementById('browser-webview');
+  webview = document.getElementById('webview');
   urlInput = document.getElementById('url-input');
   goBtn = document.getElementById('go-btn');
   backBtn = document.getElementById('back-btn');
@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===================================================================
 // NAVIGATION HELPERS
 // ===================================================================
+
 function navigateTo(rawUrl) {
   if (!webview) {
     console.warn('[Renderer] navigateTo: webview not available');
@@ -82,6 +83,7 @@ function updateNavButtons() {
 // ===================================================================
 // AI SUPERAGENT - MILESTONE 3: LLM PLANNER & EXECUTOR
 // ===================================================================
+
 /**
  * Available tools registry
  * Each tool has: name, description, params schema, and execute function
@@ -214,6 +216,7 @@ function appendMessage(role, text) {
 // ===================================================================
 // WIRE UP UI EVENTS
 // ===================================================================
+
 function wireUI() {
   console.log('[Renderer] wireUI called');
   
@@ -294,6 +297,7 @@ function wireUI() {
 // ===================================================================
 // INITIALIZATION
 // ===================================================================
+
 function init() {
   console.log('[Renderer] init called');
   
